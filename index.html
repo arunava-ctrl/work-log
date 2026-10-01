@@ -19,7 +19,7 @@
 <script>
 // Before anything paints: keep the screens hidden until the first render (no half-built Home flashing on reload),
 // and set the saved light/dark choice now so the background is already right. The timeout is a safety net.
-(()=>{const r=document.documentElement;r.classList.add("boot");setTimeout(()=>r.classList.remove("boot"),2500);
+(()=>{const r=document.documentElement;r.classList.add("boot");if(!window.WorkLogApp)r.classList.add("web");setTimeout(()=>r.classList.remove("boot"),2500);
 try{const t=(JSON.parse(localStorage.getItem("worklog.preview.v1"))||{}).theme;if(t==="dark")r.classList.add("app-dark");else if(t==="light")r.classList.add("app-light")}catch(e){}})();
 </script>
 <style>
@@ -841,23 +841,24 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   .app{max-width:1000px;padding:8px 32px 130px}
   .months{grid-template-columns:repeat(4,1fr)}
 }
-/* desktop: a sidebar instead of the bottom dock, and the content laid out for a big screen */
+/* desktop (web app only; the Android app keeps its glass dock): a sidebar instead of the bottom dock, and the content laid out for a big screen */
 @media (min-width:1100px){
-  body{padding-left:236px}
-  .app{max-width:1320px;margin:0 auto;padding:10px 48px 64px}
-  .nav{top:0;bottom:0;left:0;right:auto;width:236px;padding:22px 14px;display:flex;flex-direction:column;justify-content:flex-start;gap:22px;pointer-events:auto;
+  .web body{padding-left:236px}
+  .web .app{max-width:1320px;margin:0 auto;padding:10px 48px 64px}
+  .web .nav{top:0;bottom:0;left:0;right:auto;width:236px;padding:22px 14px;display:flex;flex-direction:column;justify-content:flex-start;gap:22px;pointer-events:auto;
     background:color-mix(in srgb,var(--surface) 82%,transparent);border-right:1px solid var(--outline);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
-  .nav-brand{display:flex;align-items:center;gap:10px;padding:2px 10px;font-size:17px;font-weight:700;letter-spacing:-.03em}
-  .nb-logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent-2),var(--accent));box-shadow:0 6px 16px -6px var(--accent)}
-  .nb-logo svg{width:22px;height:22px}
-  .nav .dock{height:auto;max-width:none;touch-action:auto}
-  .nav .pill,.nav .ind{display:none}
-  .nav .tabs{position:static;flex-direction:column;gap:4px}
-  .nav button{flex:none;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:12px;font-size:14.5px;text-shadow:none;transition:background .15s,color .15s}
-  .nav button svg{filter:none}
-  .nav button:hover{background:var(--surface2);color:var(--text)}
-  .nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
-  .toast{left:calc(50% + 118px);bottom:28px}
+  .web .nav-brand{display:flex;align-items:center;gap:10px;padding:2px 10px;font-size:17px;font-weight:700;letter-spacing:-.03em}
+  .web .nb-logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent-2),var(--accent));box-shadow:0 6px 16px -6px var(--accent)}
+  .web .nb-logo svg{width:22px;height:22px}
+  .web .nav .dock{height:auto;max-width:none;touch-action:auto}
+  .web .nav .pill,.web .nav .ind{display:none}
+  .web .nav .tabs{position:static;flex-direction:column;gap:4px}
+  .web .nav button{flex:none;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:12px;font-size:14.5px;text-shadow:none;transition:background .15s,color .15s}
+  .web .nav button svg{filter:none}
+  .web .nav button:hover{background:var(--surface2);color:var(--text)}
+  .web .nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+  .web .toast{left:calc(50% + 118px);bottom:28px}
+  html:not(.web) .app{max-width:1320px;padding:8px 40px 130px}
 
   .top{padding:30px 0 20px}
   .greeting{font-size:14px}
@@ -1068,7 +1069,7 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   }
 
   dock.addEventListener("pointerdown", e => {
-    if (e.button > 0 || wide.matches) return;
+    if (e.button > 0 || (wide.matches && !window.WorkLogApp)) return;
     clearTimeout(liftT); pressT = performance.now(); dock.classList.add("pressing");
     drag = { id: e.pointerId, x0: e.clientX, active: false, r: dock.getBoundingClientRect(), w: ind.offsetWidth,
              hot: current(), cur: 0, tx: 0 };
