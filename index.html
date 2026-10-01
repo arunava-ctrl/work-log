@@ -902,13 +902,13 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   .pf-name{grid-column:2;margin-top:14px;font-size:26px}
   .pf-body>.note{grid-column:2}
   .pf-actions{grid-column:2}
-  .pf-stats{grid-column:3;grid-row:1/4;margin-top:14px}
+  .pf-stats{grid-column:3;grid-row:1/4;margin-top:14px;align-self:center}
   .pf-stats div{padding:14px 8px}
   .pf-stats b{font-size:22px}
-  /* Profile: two balanced columns of cards */
-  .pf-stack{display:block;columns:2;column-gap:18px}
-  .pf-stack>*{break-inside:avoid;margin-bottom:18px}
-  .pf-stack .themes{grid-template-columns:repeat(4,1fr)}
+  /* Profile: an aligned two-column grid, About you first, themes full width */
+  .pf-stack{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
+  .pf-stack>#themesCard,.pf-stack>#badges{grid-column:1/-1}
+  .pf-stack>#pform>.btn{margin-top:auto}
 }
 @media (min-width:1500px){.months{grid-template-columns:repeat(6,1fr)}}
 </style>
@@ -1756,7 +1756,7 @@ function homeView(){
 }
 // profile picture (or initials, or a plain person icon) — shared by Home, the profile card and Profile
 function initials(){return (S.profile.name||"").split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase()}
-function avatarInner(){return S.profile.photo?`<img class="av-img" src="${S.profile.photo}" alt="">`:initials()||ic.user}
+function avatarInner(){return S.profile.photo?`<img class="av-img" src="${S.profile.photo}" alt="">`:acct&&acct.pic?`<img class="av-img" src="${esc(acct.pic)}" alt="" referrerpolicy="no-referrer">`:initials()||ic.user}
 function heroCard(stats){
   const g=gameStats(),lv=g.lv;
   const logged=stats.reduce((a,s)=>a+s.logged,0),done=stats.reduce((a,s)=>a+s.done,0),secs=stats.reduce((a,s)=>a+s.secs,0);
@@ -2100,7 +2100,7 @@ function profileView(){
       <label class="av-edit pf-av" for="avatarIn" style="cursor:pointer" title="${p.photo?"Change photo":"Add a photo"}"><span class="avatar">${avatarInner()}</span><span class="av-cam">${ic.cam}</span></label>
       <input type="file" id="avatarIn" accept="image/*" hidden>
       <div class="pf-name">${esc(p.name)||"Your profile"}</div>
-      <div class="note">${p.role?esc(p.role)+(p.dept?" · "+esc(p.dept):""):"Add your name and role below"}</div>
+      <div class="note">${p.role?esc(p.role)+(p.dept?" · "+esc(p.dept):""):p.name?"Add your role below":"Add your name and role below"}</div>
       <div class="pf-actions"><label class="linkbtn" for="avatarIn" style="cursor:pointer">${p.photo?"Change photo":"Add a photo"}</label>${p.photo?`<button class="linkbtn mute" data-act="rmphoto">Remove</button>`:""}</div>
       <div class="pf-stats">
         <div><b class="num">Lv ${g.lv.n}</b><span>${g.lv.title}</span></div>
@@ -2110,6 +2110,12 @@ function profileView(){
     </div>
   </header>
   <div class="stack pf-stack" style="margin-top:14px">
+  <form class="card stack" id="pform" autocomplete="off">
+    <span class="eyebrow">About you</span>
+    <div class="grid2">${f("p-name","Full name",p.name)}${f("p-role","Role",p.role)}${f("p-email","Work email",p.email,"email")}${f("p-dept","Team",p.dept)}</div>
+    ${f("p-hours","Target hours per day",p.hours,"number",'min="1" max="16" step="0.5" inputmode="decimal"')}
+    <button class="btn primary full" type="submit">${ic.check}Save profile</button>
+  </form>
   ${accountCard()}
   <section class="card stack" id="themesCard">
     <div class="row between"><span class="eyebrow">Colour theme</span><span class="note" id="themeName">${theme().name} · ${theme().tag}</span></div>
@@ -2118,12 +2124,6 @@ function profileView(){
     <div class="row between"><div><b>Stickers</b><div class="note">Theme stickers on completed days, the month bar, Insights and Home.</div></div>${liquidToggle("stkToggle",S.stk!==false,"Stickers",false,"stk")}</div>
   </section>
   ${badgesSection(g)}
-  <form class="card stack" id="pform" autocomplete="off">
-    <span class="eyebrow">About you</span>
-    <div class="grid2">${f("p-name","Full name",p.name)}${f("p-role","Role",p.role)}${f("p-email","Work email",p.email,"email")}${f("p-dept","Team",p.dept)}</div>
-    ${f("p-hours","Target hours per day",p.hours,"number",'min="1" max="16" step="0.5" inputmode="decimal"')}
-    <button class="btn primary full" type="submit">${ic.check}Save profile</button>
-  </form>
   <section class="card stack">
     <span class="eyebrow">Appearance</span>
     <div class="row between">
