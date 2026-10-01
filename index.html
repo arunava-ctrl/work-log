@@ -835,11 +835,11 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
 @media (hover:hover){.thm:hover .thm-sw{transform:scale(1.12) rotate(8deg)}}
 .boot .app,.boot .nav,.boot .fx{visibility:hidden}
 .boot *{transition:none!important}
-/* wide screens */
+/* wide screens: web app only; the Android app uses the phone layout on tablets too */
 .nav-brand{display:none}
 @media (min-width:900px) and (max-width:1099px){
-  .app{max-width:1000px;padding:8px 32px 130px}
-  .months{grid-template-columns:repeat(4,1fr)}
+  .web .app{max-width:1000px;padding:8px 32px 130px}
+  .web .months{grid-template-columns:repeat(4,1fr)}
 }
 /* desktop (web app only; the Android app keeps its glass dock): a sidebar instead of the bottom dock, and the content laid out for a big screen */
 @media (min-width:1100px){
@@ -858,30 +858,29 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   .web .nav button:hover{background:var(--surface2);color:var(--text)}
   .web .nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
   .web .toast{left:calc(50% + 118px);bottom:28px}
-  html:not(.web) .app{max-width:1320px;padding:8px 40px 130px}
 
-  .top{padding:30px 0 20px}
-  .greeting{font-size:14px}
+  .web .top{padding:30px 0 20px}
+  .web .greeting{font-size:14px}
   .web .mhead{padding:30px 0 8px}
   .web .mhead h1{font-size:36px}
 
   /* Home: the year card reads left to right, months in a tidy grid */
-  .hero{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;column-gap:28px;align-items:center;padding:28px 30px;border-radius:26px}
-  .hero>*{grid-column:1/-1}
-  .hero>.hero-top{grid-column:1}
-  .hero>.hero-stats{grid-column:2;margin-top:0}
-  .hero-big{font-size:56px}
-  .hero-big small{font-size:16px}
-  .hero-stats{gap:12px}
-  .hero-stats div{padding:16px 18px;border-radius:16px}
-  .hero-stats b{font-size:28px}
-  .hero-stats span{font-size:13px}
-  .hero-lvrow{margin-top:22px;font-size:12.5px}
-  .months{grid-template-columns:repeat(4,1fr);gap:14px}
-  .mcard{padding:18px;gap:14px}
-  .mc-name{font-size:16px}
-  .mini{gap:4px}
-  .mc-foot{font-size:12.5px}
+  .web .hero{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;column-gap:28px;align-items:center;padding:28px 30px;border-radius:26px}
+  .web .hero>*{grid-column:1/-1}
+  .web .hero>.hero-top{grid-column:1}
+  .web .hero>.hero-stats{grid-column:2;margin-top:0}
+  .web .hero-big{font-size:56px}
+  .web .hero-big small{font-size:16px}
+  .web .hero-stats{gap:12px}
+  .web .hero-stats div{padding:16px 18px;border-radius:16px}
+  .web .hero-stats b{font-size:28px}
+  .web .hero-stats span{font-size:13px}
+  .web .hero-lvrow{margin-top:22px;font-size:12.5px}
+  .web .months{grid-template-columns:repeat(4,1fr);gap:14px}
+  .web .mcard{padding:18px;gap:14px}
+  .web .mc-name{font-size:16px}
+  .web .mini{gap:4px}
+  .web .mc-foot{font-size:12.5px}
 
   /* Work Log (web app only; the Android app keeps its phone layout): the quest card stays in view on the left, the days (or insights) on the right */
   .web .log-body{display:grid;grid-template-columns:340px minmax(0,1fr);column-gap:28px;row-gap:0;align-items:start}
@@ -896,22 +895,22 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   .web .dr-edit>:nth-child(-n+2){grid-column:1/-1}
 
   /* Profile header: photo, name and stats in one row under the cover */
-  .pf-cover{height:84px}
-  .pf-body{display:grid;grid-template-columns:auto 1fr minmax(360px,42%);grid-template-rows:auto auto auto;column-gap:22px;align-items:center;text-align:left;padding:0 28px 24px}
-  .pf-av{grid-row:1/4;margin-top:-36px}
-  .pf-av .avatar{width:104px;height:104px;font-size:34px}
-  .pf-name{grid-column:2;margin-top:14px;font-size:26px}
-  .pf-body>.note{grid-column:2}
-  .pf-actions{grid-column:2}
-  .pf-stats{grid-column:3;grid-row:1/4;margin-top:14px;align-self:center}
-  .pf-stats div{padding:14px 8px}
-  .pf-stats b{font-size:22px}
+  .web .pf-cover{height:84px}
+  .web .pf-body{display:grid;grid-template-columns:auto 1fr minmax(360px,42%);grid-template-rows:auto auto auto;column-gap:22px;align-items:center;text-align:left;padding:0 28px 24px}
+  .web .pf-av{grid-row:1/4;margin-top:-36px}
+  .web .pf-av .avatar{width:104px;height:104px;font-size:34px}
+  .web .pf-name{grid-column:2;margin-top:14px;font-size:26px}
+  .web .pf-body>.note{grid-column:2}
+  .web .pf-actions{grid-column:2}
+  .web .pf-stats{grid-column:3;grid-row:1/4;margin-top:14px;align-self:center}
+  .web .pf-stats div{padding:14px 8px}
+  .web .pf-stats b{font-size:22px}
   /* Profile: an aligned two-column grid, About you first, themes full width */
-  .pf-stack{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
-  .pf-stack>#themesCard,.pf-stack>#badges{grid-column:1/-1}
-  .pf-stack>#pform>.btn{margin-top:auto}
+  .web .pf-stack{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
+  .web .pf-stack>#themesCard,.web .pf-stack>#badges{grid-column:1/-1}
+  .web .pf-stack>#pform>.btn{margin-top:auto}
 }
-@media (min-width:1500px){.months{grid-template-columns:repeat(6,1fr)}}
+@media (min-width:1500px){.web .months{grid-template-columns:repeat(6,1fr)}}
 </style>
 
 <div class="fx" id="fxBack" aria-hidden="true"></div>
