@@ -562,6 +562,46 @@ textarea::placeholder{color:var(--faint)}
 .check input{width:16px;height:16px;accent-color:var(--accent)}
 .export{width:100%;min-height:140px;font-family:var(--mono);font-size:11.5px;overflow:auto;resize:vertical}
 @keyframes fade{from{opacity:0}}
+/* sign-in page */
+.login{position:fixed;inset:0;z-index:1000;overflow:auto;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(28px + env(safe-area-inset-top,0px)) 20px calc(28px + env(safe-area-inset-bottom,0px));animation:fade .3s ease-out}
+.login::before{content:"";position:fixed;inset:-20% -20% auto;height:70%;background:radial-gradient(60% 60% at 30% 20%,color-mix(in srgb,var(--accent) 34%,transparent),transparent 70%),radial-gradient(50% 50% at 80% 10%,color-mix(in srgb,var(--accent-2) 26%,transparent),transparent 70%);pointer-events:none}
+.login.out{animation:loginOut .35s ease-in forwards}
+@keyframes loginOut{to{opacity:0;transform:scale(1.03)}}
+.lg-card{position:relative;width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px}
+.lg-logo{width:76px;height:76px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent-2),var(--accent));box-shadow:0 18px 40px -12px color-mix(in srgb,var(--accent) 70%,transparent);animation:lgpop .7s cubic-bezier(.3,1.6,.5,1) both}
+.lg-logo svg{width:42px;height:42px}
+@keyframes lgpop{from{transform:scale(.4) rotate(-12deg);opacity:0}}
+.lg-card h1{margin:4px 0 0;font-size:30px;font-weight:700;letter-spacing:-.03em}
+.lg-sub{margin:-8px 0 0;color:var(--muted);font-size:14.5px;line-height:1.5;max-width:320px}
+.lg-feats{width:100%;display:grid;gap:8px;margin:6px 0}
+.lg-feat{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--outline);animation:pcrow .5s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(.15s + var(--i)*.07s)}
+.lg-feat i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--accent-soft);color:var(--accent)}
+.lg-feat i svg{width:18px;height:18px}
+.lg-feat b{display:block;font-size:13.5px;font-weight:600}
+.lg-feat span{font-size:12.5px;color:var(--muted)}
+.gbtn{width:100%;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:15px;font-weight:600;background:#fff;color:#1F1F1F;border:1px solid #DADCE0;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 18px -8px rgba(0,0,0,.25);transition:transform .15s,box-shadow .15s}
+.gbtn:hover{box-shadow:0 1px 2px rgba(0,0,0,.08),0 10px 24px -8px rgba(0,0,0,.3)}
+.gbtn:active{transform:scale(.98)}
+.gbtn svg{width:20px;height:20px}
+.gbtn[disabled]{opacity:.6}
+.gbtn .spin{width:18px;height:18px;border-radius:50%;border:2px solid #DADCE0;border-top-color:#4285F4;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lg-skip{font-size:14px;font-weight:500;color:var(--muted);padding:8px 14px;border-radius:10px}
+.lg-skip:hover{color:var(--text);background:var(--surface)}
+.lg-fine{font-size:11.5px;color:var(--faint);max-width:330px;line-height:1.5;margin:0}
+.lg-fine a{color:inherit;text-decoration:underline}
+/* account card on Profile */
+.acct{display:flex;align-items:center;gap:12px}
+.acct-pic{width:44px;height:44px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.acct-pic img{width:100%;height:100%;object-fit:cover}
+.acct-who{min-width:0;flex:1}
+.acct-who b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-who span{display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-st{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)}
+.sync-st i{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+.sync-st.ok i{background:#22C55E}
+.sync-st.busy i{background:var(--accent);animation:live 1s ease-in-out infinite}
+.sync-st.err i{background:var(--danger)}
 @keyframes up{from{transform:translateY(24px);opacity:0}}
 
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--surface);color:var(--text);border:1px solid var(--outline);padding:10px 10px 10px 14px;border-radius:12px;font-weight:500;font-size:13px;display:flex;gap:14px;align-items:center;z-index:60;box-shadow:var(--shadow-lg);max-width:calc(100% - 32px);animation:up .2s}
@@ -1199,9 +1239,9 @@ if(!S.m3){
   S.m3=1;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
 }
 let saveT=null;
-const writeNow=()=>{saveT=null;
+const writeNow=()=>{saveT=null;stampChanges();
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save — this device's storage is full. Remove some photos.")}
-  syncSkipDays();scheduleBackup()};
+  syncSkipDays();scheduleBackup();scheduleSync()};
 function save(){clearTimeout(saveT);saveT=setTimeout(writeNow,350)}
 // the app can be closed right after a change: write it (and its backup) before the page goes away
 const flushSave=()=>{if(saveT!==null){clearTimeout(saveT);writeNow()}if(bkT!==null){clearTimeout(bkT);runBackup()}};
@@ -1260,6 +1300,181 @@ function bkButtons(){
     :`<button class="btn primary" data-act="bkpick">${ic.shield}Choose backup file</button>`;
   return `<button class="btn primary" data-act="bkdl">${ic.down}Download backup</button>`}
 function refreshBk(){const el=document.getElementById("bkStatus");if(el)el.innerHTML=bkStatus();const b=document.getElementById("bkBtns");if(b)b.innerHTML=bkButtons()}
+
+/* ---------- Google account sync ----------
+   Signed in, the whole log is kept in one file in the hidden app folder of the user's own Google Drive
+   (drive.appdata: the app can't see anything else in Drive, and nothing goes to any other server).
+   Every device merges that file with its own copy day by day: S.mt holds when each day ("2026-10-02")
+   and each shared setting ("@tags", "@profile", …) last changed, and the newest change wins. */
+// OAuth client ID ("Web application") from Google Cloud; the Android app uses its own Android client
+const GCLIENT="";
+const GSCOPE="https://www.googleapis.com/auth/drive.appdata openid email profile";
+const DRIVE="https://www.googleapis.com/drive/v3",DRIVE_UP="https://www.googleapis.com/upload/drive/v3",SYNC_FILE="worklog-sync.json";
+const SYNC_KEYS=["tags","schedules","defaultOff","profile","theme","accent","fx","stk","timer"];
+const ACCT="worklog.acct",SYNC="worklog.sync";
+const jget=k=>{try{return JSON.parse(localStorage.getItem(k))||null}catch(e){return null}};
+const jset=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let acct=jget(ACCT);                 // {email,name,pic} while signed in
+let syncSt={state:acct?"idle":"off"}; // off | idle | busy | ok | err | tap
+let snapMap=new Map(),syncT=null,syncing=false,syncAgain=false,tok=null,tokExp=0,needTap=false;
+try{const t=JSON.parse(sessionStorage.getItem("wl.tok"));if(t&&t.exp>Date.now()){tok=t.tok;tokExp=t.exp}}catch(e){}
+function snapOf(){const m=new Map();for(const [id,r] of Object.entries(S.entries))m.set(id,JSON.stringify(r));for(const k of SYNC_KEYS)m.set("@"+k,JSON.stringify(S[k]??null));return m}
+// first run of this version: everything already saved counts as very old, so another device's edits win
+function initSync(){S.mt=S.mt||{};snapMap=snapOf();for(const k of snapMap.keys())if(!S.mt[k])S.mt[k]=1}
+function stampChanges(){S.mt=S.mt||{};const now=Date.now(),cur=snapOf();
+  for(const [k,v] of cur)if(snapMap.get(k)!==v)S.mt[k]=now;
+  for(const k of snapMap.keys())if(!cur.has(k))S.mt[k]=now; // deleted: the time stays as a marker
+  snapMap=cur}
+const maxMt=()=>Math.max(0,...Object.values(S.mt||{}));
+// newest wins, per day and per setting; returns whether this device changed and whether Drive is behind
+function mergeRemote(R){
+  const lm=S.mt||(S.mt={}),rm=R.mt||{};let changed=false,behind=false;
+  for(const k of new Set([...Object.keys(lm),...Object.keys(rm)])){const a=lm[k]||0,b=rm[k]||0;
+    if(b>a){changed=true;lm[k]=b;
+      if(k[0]==="@"){const f=k.slice(1);if(R[f]!==undefined)S[f]=R[f];else delete S[f]}
+      else if(R.entries&&R.entries[k])S.entries[k]=R.entries[k];else delete S.entries[k]}
+    else if(a>b)behind=true}
+  return {changed,behind};
+}
+function applyMerged(){
+  if(S.timer&&!S.entries[S.timer.id])S.timer=null;
+  snapMap=snapOf();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  // don't pull the page out from under someone typing: redraw once they leave the field
+  const a=document.activeElement;
+  if(a&&/^(TEXTAREA|INPUT)$/.test(a.tagName)&&app.contains(a)){a.addEventListener("blur",()=>setTimeout(redraw,0),{once:true});return}
+  redraw();
+}
+function redraw(){const y=scrollY;render();scrollTo(0,y);applyScene();syncReminder()}
+const syncPayload=()=>JSON.stringify({...S,abk:undefined,app:"worklog",syncedAt:new Date().toISOString()});
+function setSync(state,extra){syncSt={state,...extra};refreshSync()}
+
+// --- access tokens: the Android app signs in natively (Google blocks sign-in inside web views); browsers use Google Identity Services
+let gis=null,tokWait=null;
+function loadGis(){return gis||(gis=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://accounts.google.com/gsi/client";sc.async=true;sc.onload=res;sc.onerror=()=>{gis=null;rej(new Error("offline"))};document.head.appendChild(sc)}))}
+window.__gAuthDone=(token,email,err)=>{const w=tokWait;tokWait=null;if(!w)return;
+  if(token){tok=token;tokExp=Date.now()+50*60e3;w.res({token,email})}else w.rej(new Error(err||"cancelled"))};
+async function getToken(interactive){
+  if(!interactive&&tok&&Date.now()<tokExp-60e3)return tok;
+  if(APP&&APP.gAuth){
+    if(tokWait)tokWait.rej(new Error("superseded"));
+    const r=await new Promise((res,rej)=>{tokWait={res,rej};try{APP.gAuth(!!interactive)}catch(e){tokWait=null;rej(e)}});
+    if(r.email&&acct&&!acct.email)acct.email=r.email;return r.token}
+  if(!GCLIENT)throw new Error("notset");
+  await loadGis();
+  return new Promise((res,rej)=>{
+    const tc=google.accounts.oauth2.initTokenClient({client_id:GCLIENT,scope:GSCOPE,
+      callback:r=>{if(r.error){rej(new Error(r.error));return}tok=r.access_token;tokExp=Date.now()+(+r.expires_in||3600)*1e3;
+        try{sessionStorage.setItem("wl.tok",JSON.stringify({tok,exp:tokExp}))}catch(e){}res(tok)},
+      error_callback:e=>rej(new Error(e&&e.type||"popup"))});
+    tc.requestAccessToken(interactive?{prompt:"select_account"}:{prompt:"",login_hint:acct&&acct.email||undefined});
+  });
+}
+async function gfetch(url,opt={},retry=true){
+  const t=await getToken(false);
+  const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:"Bearer "+t}});
+  if(r.status===401&&retry){tok=null;tokExp=0;return gfetch(url,opt,false)}
+  if(!r.ok)throw new Error("http "+r.status);
+  return r;
+}
+async function findSyncFile(){
+  const q=encodeURIComponent(`name='${SYNC_FILE}' and trashed=false`);
+  const r=await gfetch(`${DRIVE}/files?spaces=appDataFolder&q=${q}&orderBy=modifiedTime%20desc&fields=files(id,version)`);
+  return (await r.json()).files[0]||null;
+}
+async function uploadSync(id){
+  const body=syncPayload(),meta=id?{}:{name:SYNC_FILE,parents:["appDataFolder"],mimeType:"application/json"},url=`${DRIVE_UP}/files${id?"/"+id:""}`;
+  if(body.length<4e6){
+    const b="wl-"+Math.random().toString(36).slice(2),
+      mp=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${body}\r\n--${b}--`;
+    return (await gfetch(`${url}?uploadType=multipart&fields=id,version`,{method:id?"PATCH":"POST",headers:{"Content-Type":`multipart/related; boundary=${b}`},body:mp})).json();
+  }
+  // big logs (lots of pictures): resumable upload
+  const s1=await gfetch(`${url}?uploadType=resumable&fields=id,version`,{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json; charset=UTF-8","X-Upload-Content-Type":"application/json"},body:JSON.stringify(meta)});
+  const loc=s1.headers.get("Location");if(!loc)throw new Error("upload");
+  const s2=await fetch(loc,{method:"PUT",headers:{"Content-Type":"application/json"},body});if(!s2.ok)throw new Error("http "+s2.status);
+  return s2.json();
+}
+function scheduleSync(){if(!acct)return;clearTimeout(syncT);syncT=setTimeout(syncNow,4000)}
+async function syncNow(){
+  if(!acct)return;clearTimeout(syncT);syncT=null;
+  if(syncing){syncAgain=true;return}syncing=true;
+  if(saveT!==null){clearTimeout(saveT);writeNow()}
+  const st=jget(SYNC)||{};setSync("busy",{at:st.at});
+  try{
+    let meta=null;
+    if(st.fileId){try{meta=await (await gfetch(`${DRIVE}/files/${st.fileId}?fields=id,version,trashed`)).json();if(meta.trashed)meta=null}catch(e){if(/auth|notset|popup|cancel/.test(e.message))throw e;meta=null}}
+    if(!meta)meta=await findSyncFile();
+    let push=maxMt()>(st.lmax||0)||!meta;
+    if(meta&&String(meta.version)!==String(st.version)){
+      const R=await (await gfetch(`${DRIVE}/files/${meta.id}?alt=media`)).json();
+      if(R&&validBackup(R)){const m=mergeRemote(R);if(m.changed)applyMerged();push=m.behind}
+    }
+    if(push&&(hasData(S)||meta))meta=await uploadSync(meta&&meta.id);
+    jset(SYNC,{fileId:meta&&meta.id,version:meta&&meta.version,lmax:maxMt(),at:Date.now()});
+    needTap=false;setSync("ok",{at:Date.now()});
+  }catch(e){
+    const m=e&&e.message||"";
+    // a browser can't refresh the sign-in without a tap; the next tap anywhere does it
+    if(!APP&&/popup|interaction|consent|login/.test(m)){needTap=true;setSync("tap",{at:st.at})}
+    else setSync("err",{at:st.at,msg:/notset/.test(m)?"Google sign-in isn't set up yet":/http 40[13]|auth|consent|cancel/.test(m)?"Sign in again to keep syncing":navigator.onLine===false?"Offline — will sync when you're back online":"Couldn't reach Google Drive"});
+  }finally{syncing=false;if(syncAgain){syncAgain=false;scheduleSync()}}
+}
+async function signIn(btn){
+  if(!APP&&!GCLIENT){toast("Google sign-in isn't set up for this site yet");return false}
+  try{
+    const t=await getToken(true);
+    let who={};try{who=await (await fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:"Bearer "+t}})).json()}catch(e){}
+    acct={email:who.email||acct&&acct.email||"",name:who.name||"",pic:who.picture||""};jset(ACCT,acct);
+    if(acct.name&&!S.profile.name)S.profile.name=acct.name;
+    if(acct.email&&!S.profile.email)S.profile.email=acct.email;
+    jset(SYNC,null);save();await syncNow();
+    toast(syncSt.state==="ok"?"Signed in — your log is synced with Google Drive":"Signed in");return true;
+  }catch(e){const m=e&&e.message||"";if(!/cancel|closed|access_denied|superseded/.test(m))toast(/offline|Failed to fetch/.test(m)?"You're offline — connect to sign in":"Couldn't sign in with Google");return false}
+}
+function signOut(){
+  confirmSheet("Sign out of Google?","Your log stays on this device and in your Google Drive. This device just stops syncing until you sign in again.","Sign out",()=>{
+    try{if(APP&&APP.gSignOut)APP.gSignOut();else if(tok&&window.google)google.accounts.oauth2.revoke(tok,()=>{})}catch(e){}
+    acct=null;tok=null;tokExp=0;jset(ACCT,null);jset(SYNC,null);try{sessionStorage.removeItem("wl.tok")}catch(e){}
+    setSync("off");if(U.tab==="profile")redraw();toast("Signed out")});
+}
+function syncText(){const s=syncSt,at=s.at?` · ${whenTxt(s.at)}`:"";
+  return s.state==="busy"?"Syncing…":s.state==="ok"?`Synced${at}`:s.state==="tap"?"Tap anywhere to reconnect":s.state==="err"?(s.msg||"Sync failed"):s.state==="off"?"Not signed in":`Ready${at}`}
+const syncCls=()=>({ok:"ok",busy:"busy",err:"err",tap:"err"})[syncSt.state]||"";
+function refreshSync(){document.querySelectorAll(".sync-st").forEach(el=>{el.className="sync-st "+syncCls();const t=el.querySelector("span");if(t)t.textContent=syncText()})}
+const GLOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+function accountCard(){
+  if(!acct)return `<section class="card stack" id="acctCard">
+    <div class="row between"><span class="eyebrow">Account &amp; sync</span><span class="sync-st"><i></i><span>Not signed in</span></span></div>
+    <div><b>Sync your phone and the web</b><div class="note">Sign in with Google to keep the same log everywhere, with a backup in your own Google Drive.</div></div>
+    <button class="gbtn" data-act="gsignin">${GLOGO}Continue with Google</button></section>`;
+  const ini=(acct.name||acct.email||"?").trim()[0].toUpperCase();
+  return `<section class="card stack" id="acctCard">
+    <div class="row between"><span class="eyebrow">Account &amp; sync</span><span class="sync-st ${syncCls()}"><i></i><span>${syncText()}</span></span></div>
+    <div class="acct"><span class="acct-pic">${acct.pic?`<img src="${esc(acct.pic)}" alt="" referrerpolicy="no-referrer">`:ini}</span>
+      <span class="acct-who"><b>${esc(acct.name||"Google account")}</b><span>${esc(acct.email)}</span></span></div>
+    <p class="note" style="margin:0">Every change syncs to a private app folder in your Google Drive. Sign in with the same account on the web app and the Android app to see the same log on both.</p>
+    <div class="grid2"><button class="btn ghost" data-act="syncnow">${ic.reset}Sync now</button><button class="btn ghost" data-act="gsignout">${ic.x}Sign out</button></div></section>`;
+}
+const loginSeen=()=>{try{return !!localStorage.getItem("worklog.login")}catch(e){return true}};
+function showLogin(then){
+  const el=document.createElement("div");el.className="login";el.setAttribute("role","dialog");el.setAttribute("aria-label","Sign in");
+  const feats=[[ic.reset,"Synced everywhere","The same log on your phone and on the web"],[ic.shield,"Backed up in your Google Drive","In a private app folder only Work Log can open"],[ic.spark,"Streaks, XP and levels","Keep the momentum going every day"]];
+  el.innerHTML=`<div class="lg-card">
+    <div class="lg-logo"><svg viewBox="27 22 54 58" aria-hidden="true"><path fill="#fff" d="M42,32h24a9,9 0,0 1,9 9v26a9,9 0,0 1,-9 9h-24a9,9 0,0 1,-9 -9v-26a9,9 0,0 1,9 -9z M44,26a2.5,2.5 0,0 1,5 0v9a2.5,2.5 0,0 1,-5 0z M59,26a2.5,2.5 0,0 1,5 0v9a2.5,2.5 0,0 1,-5 0z"/><path fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" d="M43,55l8,8l15,-16"/></svg></div>
+    <h1>Work Log</h1>
+    <p class="lg-sub">Log your day, keep your streak, and pick up right where you left off on any device.</p>
+    <div class="lg-feats">${feats.map(([i,b,t],n)=>`<div class="lg-feat" style="--i:${n}"><i>${i}</i><div><b>${b}</b><span>${t}</span></div></div>`).join("")}</div>
+    <button class="gbtn" id="lgGo">${GLOGO}<span>Continue with Google</span></button>
+    <button class="lg-skip" id="lgSkip">Use without an account</button>
+    <p class="lg-fine">Work Log only gets its own app folder in your Drive — it can't see your other files. Nothing is sent to any other server. <a href="${APP?"https://arunava-ctrl.github.io/work-log/privacy.html":"privacy.html"}" target="_blank" rel="noopener">Privacy</a></p>
+  </div>`;
+  const done=signed=>{try{localStorage.setItem("worklog.login","1")}catch(e){}el.classList.add("out");setTimeout(()=>{el.remove();then&&then(signed)},330)};
+  const go=el.querySelector("#lgGo");
+  go.onclick=async()=>{go.disabled=true;go.innerHTML=`<span class="spin"></span><span>Signing in…</span>`;
+    const ok=await signIn();if(ok)done(true);else{go.disabled=false;go.innerHTML=`${GLOGO}<span>Continue with Google</span>`}};
+  el.querySelector("#lgSkip").onclick=()=>done(false);
+  document.body.appendChild(el);
+}
 addEventListener("pagehide",flushSave);document.addEventListener("visibilitychange",()=>{if(document.hidden)flushSave()});
 
 const schedOf=(y,m)=>S.schedules[`${y}-${m}`]||{preset:null,off:S.defaultOff};
@@ -1802,6 +2017,7 @@ function profileView(){
     </div>
   </header>
   <div class="stack" style="margin-top:14px">
+  ${accountCard()}
   <section class="card stack" id="themesCard">
     <div class="row between"><span class="eyebrow">Colour theme</span><span class="note" id="themeName">${theme().name} · ${theme().tag}</span></div>
     <div class="themes" role="radiogroup" aria-label="Colour theme">${THEMES.map(t=>`<button class="thm" role="radio" data-thm="${t.id}" aria-checked="${t.id===theme().id}" aria-pressed="${t.id===theme().id}" style="--ta:${t.a};--tb:${t.a2}"><span class="thm-sw"></span>${STK[t.id]?stkImg(t.id,STK[t.id].hero,"thm-stk",`--rot:12deg;--dl:-${(THEMES.indexOf(t)*.37).toFixed(2)}s`):""}<span class="thm-n">${t.name}</span><span class="thm-s">${t.tag}</span></button>`).join("")}</div>
@@ -2189,10 +2405,13 @@ app.addEventListener("click",e=>{
     rem:()=>{S.profile.reminder=!S.profile.reminder;save();setToggle(el,S.profile.reminder);$("#p-time").disabled=!S.profile.reminder;syncReminder()},
     csv:()=>exportSheet("Spreadsheet export",csv()),
     json:()=>exportSheet("Full backup",JSON.stringify({...S,timer:null},null,1)),
-    wipe:()=>confirmSheet("Erase everything?","Deletes every day, tag, schedule and your profile from this device and from the automatic backup. Older daily backup copies in Documents › WorkLog stay. This can't be undone.","Erase all data",()=>{S={...seed(),theme:S.theme,accent:S.accent,fx:S.fx,stk:S.stk,abk:S.abk};clearTimeout(saveT);writeNow();clearTimeout(bkT);runBackup(true);render();toast("All data erased")}),
+    wipe:()=>confirmSheet("Erase everything?","Deletes every day, tag, schedule and your profile from this device and from the automatic backup. Older daily backup copies in Documents › WorkLog stay. This can't be undone.","Erase all data",()=>{S={...seed(),theme:S.theme,accent:S.accent,fx:S.fx,stk:S.stk,abk:S.abk,mt:S.mt};clearTimeout(saveT);writeNow();clearTimeout(bkT);runBackup(true);render();toast("All data erased")}),
     abk:()=>{S.abk=S.abk===false;save();setToggle(el,S.abk);refreshBk();if(S.abk){if(FSA&&!bkFile&&!bkHandle)pickBkFile();else runBackup()}},
     bknow:()=>{if(!hasData(S)){toast("Nothing to back up yet");return}runBackup().then(ok=>{if(!window.WorkLogApp)toast(ok?"Backed up":"Couldn't write the backup file")})},
     bkpick:()=>pickBkFile(),
+    gsignin:async()=>{el.disabled=true;const ok=await signIn();el.disabled=false;if(ok&&U.tab==="profile")redraw()},
+    gsignout:()=>signOut(),
+    syncnow:()=>{if(needTap){needTap=false;getToken(false).then(()=>syncNow(),()=>syncNow())}else syncNow()},
     bkresume:()=>resumeBkFile(),
     bkdl:()=>{if(!hasData(S)){toast("Nothing to back up yet");return}downloadBackup();toast("Backup downloaded")}
   })[el.dataset.act]?.();
@@ -2204,13 +2423,22 @@ setInterval(()=>{if(!S.timer)return;const [y,m,d]=parseId(S.timer.id),x=day(y,m,
   document.querySelectorAll(`[data-timer="${S.timer.id}"] span`).forEach(el=>el.textContent=fmtTimer(x.tsecs));
   document.querySelectorAll(`[data-tick="${S.timer.id}"]`).forEach(el=>el.textContent=fmtTimer(x.secs))},1000);
 
+initSync();
 render();
 applyScene();
 syncReminder();
 loadBkFile();
+// sync when the app comes back to the front, and every minute while it's open (a quick version check)
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&acct)syncNow()});
+setInterval(()=>{if(acct&&!document.hidden&&!needTap)syncNow()},60e3);
+// browsers need a tap to renew an expired sign-in; renew it on the first one
+document.addEventListener("pointerdown",()=>{if(needTap&&acct){needTap=false;getToken(false).then(()=>syncNow(),()=>{needTap=true;setSync("tap",syncSt)})}},true);
+if(acct)syncNow();
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-if(restoredFrom)setTimeout(()=>toast("Welcome back — your log was restored from the phone's backup"),400);
-else if(!FIRST){let seen=false;try{seen=!!localStorage.getItem("worklog.welcomed");localStorage.setItem("worklog.welcomed","1")}catch(e){}if(!seen)setTimeout(welcomeSheet,500)}
+// first start: the sign-in page (once per device); skipping it on a fresh device offers a backup file instead
+const firstRun=()=>{if(restoredFrom)setTimeout(()=>toast("Welcome back — your log was restored from the phone's backup"),400);
+  else if(!FIRST&&!hasData(S)){let seen=false;try{seen=!!localStorage.getItem("worklog.welcomed");localStorage.setItem("worklog.welcomed","1")}catch(e){}if(!seen)setTimeout(welcomeSheet,300)}};
+if(!acct&&!loginSeen())showLogin(signed=>{if(!signed)firstRun()});else firstRun();
 // on-screen keyboard: the Android app sets .kb-open itself; in a mobile browser, infer it from the viewport shrinking
 window.__kb=open=>document.documentElement.classList.toggle("kb-open",!!open);
 if(!APP&&window.visualViewport){const vv=visualViewport,kb=()=>window.__kb(innerHeight-vv.height>150);vv.addEventListener("resize",kb)}
