@@ -835,29 +835,89 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
 @media (hover:hover){.thm:hover .thm-sw{transform:scale(1.12) rotate(8deg)}}
 .boot .app,.boot .nav,.boot .fx{visibility:hidden}
 .boot *{transition:none!important}
-/* wide screens (desktop browsers, landscape tablets): use the room instead of a phone-width column */
-@media (min-width:900px){
-  .app{max-width:1240px;padding:8px 32px 130px}
-  .top{padding:26px 0 18px}
-  .mhead{padding:26px 0 6px}
+/* wide screens */
+.nav-brand{display:none}
+@media (min-width:900px) and (max-width:1099px){
+  .app{max-width:1000px;padding:8px 32px 130px}
+  .months{grid-template-columns:repeat(4,1fr)}
 }
+/* desktop: a sidebar instead of the bottom dock, and the content laid out for a big screen */
 @media (min-width:1100px){
-  .months{grid-template-columns:repeat(6,1fr)}
-  /* Work Log: the quest card stays in view on the left, the days (or insights) scroll on the right */
-  .log-body{display:grid;grid-template-columns:minmax(320px,380px) minmax(0,1fr);column-gap:24px;row-gap:0;align-items:start}
+  body{padding-left:236px}
+  .app{max-width:1320px;margin:0 auto;padding:10px 48px 64px}
+  .nav{top:0;bottom:0;left:0;right:auto;width:236px;padding:22px 14px;display:flex;flex-direction:column;justify-content:flex-start;gap:22px;pointer-events:auto;
+    background:color-mix(in srgb,var(--surface) 82%,transparent);border-right:1px solid var(--outline);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+  .nav-brand{display:flex;align-items:center;gap:10px;padding:2px 10px;font-size:17px;font-weight:700;letter-spacing:-.03em}
+  .nb-logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent-2),var(--accent));box-shadow:0 6px 16px -6px var(--accent)}
+  .nb-logo svg{width:22px;height:22px}
+  .nav .dock{height:auto;max-width:none;touch-action:auto}
+  .nav .pill,.nav .ind{display:none}
+  .nav .tabs{position:static;flex-direction:column;gap:4px}
+  .nav button{flex:none;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:12px;font-size:14.5px;text-shadow:none;transition:background .15s,color .15s}
+  .nav button svg{filter:none}
+  .nav button:hover{background:var(--surface2);color:var(--text)}
+  .nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+  .toast{left:calc(50% + 118px);bottom:28px}
+
+  .top{padding:30px 0 20px}
+  .greeting{font-size:14px}
+  .mhead{padding:30px 0 8px}
+  .mhead h1{font-size:36px}
+
+  /* Home: the year card reads left to right, months in a tidy grid */
+  .hero{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;column-gap:28px;align-items:center;padding:28px 30px;border-radius:26px}
+  .hero>*{grid-column:1/-1}
+  .hero>.hero-top{grid-column:1}
+  .hero>.hero-stats{grid-column:2;margin-top:0}
+  .hero-big{font-size:56px}
+  .hero-big small{font-size:16px}
+  .hero-stats{gap:12px}
+  .hero-stats div{padding:16px 18px;border-radius:16px}
+  .hero-stats b{font-size:28px}
+  .hero-stats span{font-size:13px}
+  .hero-lvrow{margin-top:22px;font-size:12.5px}
+  .months{grid-template-columns:repeat(4,1fr);gap:14px}
+  .mcard{padding:18px;gap:14px}
+  .mc-name{font-size:16px}
+  .mini{gap:4px}
+  .mc-foot{font-size:12.5px}
+
+  /* Work Log: the quest card stays in view on the left, the days (or insights) on the right */
+  .log-body{display:grid;grid-template-columns:340px minmax(0,1fr);column-gap:28px;row-gap:0;align-items:start}
   .log-body>*{grid-column:2;margin-bottom:14px}
-  .log-body>.quest{grid-column:1;grid-row:1/span 9;position:sticky;top:20px}
+  .log-body>.quest{grid-column:1;grid-row:1/span 9;position:sticky;top:24px}
+  .drow{padding:10px 12px 10px 12px}
+  .dr-title{font-size:15px}
+  .dr-edit textarea{min-height:90px}
+
+  /* the open day: tasks beside notes, pictures beside time */
+  .dr-edit{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
+  .dr-edit>:nth-child(-n+2){grid-column:1/-1}
+
+  /* Profile header: photo, name and stats in one row under the cover */
+  .pf-cover{height:84px}
+  .pf-body{display:grid;grid-template-columns:auto 1fr minmax(360px,42%);grid-template-rows:auto auto auto;column-gap:22px;align-items:center;text-align:left;padding:0 28px 24px}
+  .pf-av{grid-row:1/4;margin-top:-36px}
+  .pf-av .avatar{width:104px;height:104px;font-size:34px}
+  .pf-name{grid-column:2;margin-top:14px;font-size:26px}
+  .pf-body>.note{grid-column:2}
+  .pf-actions{grid-column:2}
+  .pf-stats{grid-column:3;grid-row:1/4;margin-top:14px}
+  .pf-stats div{padding:14px 8px}
+  .pf-stats b{font-size:22px}
   /* Profile: two balanced columns of cards */
-  .pf-stack{display:block;columns:2;column-gap:16px}
-  .pf-stack>*{break-inside:avoid;margin-bottom:16px}
+  .pf-stack{display:block;columns:2;column-gap:18px}
+  .pf-stack>*{break-inside:avoid;margin-bottom:18px}
   .pf-stack .themes{grid-template-columns:repeat(4,1fr)}
 }
+@media (min-width:1500px){.months{grid-template-columns:repeat(6,1fr)}}
 </style>
 
 <div class="fx" id="fxBack" aria-hidden="true"></div>
 <div class="app" id="app"></div>
 <div class="fx" id="fxFront" aria-hidden="true"></div>
 <nav class="nav" aria-label="Main">
+  <div class="nav-brand" aria-hidden="true"><span class="nb-logo"><svg viewBox="27 22 54 58"><path fill="#fff" d="M42,32h24a9,9 0,0 1,9 9v26a9,9 0,0 1,-9 9h-24a9,9 0,0 1,-9 -9v-26a9,9 0,0 1,9 -9z M44,26a2.5,2.5 0,0 1,5 0v9a2.5,2.5 0,0 1,-5 0z M59,26a2.5,2.5 0,0 1,5 0v9a2.5,2.5 0,0 1,-5 0z"/><path fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" d="M43,55l8,8l15,-16"/></svg></span>Work Log</div>
   <div class="dock" id="navdock">
     <div class="pill" id="navpill"></div>
     <span class="ind" id="ind"></span>
@@ -986,6 +1046,7 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   addEventListener("resize", () => { update(); follow(200); });
 
   // ---- iOS-style drag: press the bar and slide the glass between tabs ----
+  const wide = matchMedia("(min-width:1100px)"); // desktop: the dock becomes a sidebar with plain buttons
   const dock = pill.parentElement, tabs = [...dock.querySelectorAll(".tabs button")];
   let drag = null, suppressClick = false, pressT = 0, liftT = 0, dragRaf = 0;
   const INSET = 6, LIFT_X = 1.1, LIFT_Y = 1.32, MAX_STRETCH = .06; // lifted bubble: 1.32× tall pokes ~4px past the 58px bar
@@ -1007,7 +1068,7 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   }
 
   dock.addEventListener("pointerdown", e => {
-    if (e.button > 0) return;
+    if (e.button > 0 || wide.matches) return;
     clearTimeout(liftT); pressT = performance.now(); dock.classList.add("pressing");
     drag = { id: e.pointerId, x0: e.clientX, active: false, r: dock.getBoundingClientRect(), w: ind.offsetWidth,
              hot: current(), cur: 0, tx: 0 };
