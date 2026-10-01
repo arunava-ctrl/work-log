@@ -862,8 +862,8 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
 
   .top{padding:30px 0 20px}
   .greeting{font-size:14px}
-  .mhead{padding:30px 0 8px}
-  .mhead h1{font-size:36px}
+  .web .mhead{padding:30px 0 8px}
+  .web .mhead h1{font-size:36px}
 
   /* Home: the year card reads left to right, months in a tidy grid */
   .hero{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;column-gap:28px;align-items:center;padding:28px 30px;border-radius:26px}
@@ -883,17 +883,17 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
   .mini{gap:4px}
   .mc-foot{font-size:12.5px}
 
-  /* Work Log: the quest card stays in view on the left, the days (or insights) on the right */
-  .log-body{display:grid;grid-template-columns:340px minmax(0,1fr);column-gap:28px;row-gap:0;align-items:start}
-  .log-body>*{grid-column:2;margin-bottom:14px}
-  .log-body>.quest{grid-column:1;grid-row:1/span 9;position:sticky;top:24px}
-  .drow{padding:10px 12px 10px 12px}
-  .dr-title{font-size:15px}
-  .dr-edit textarea{min-height:90px}
+  /* Work Log (web app only; the Android app keeps its phone layout): the quest card stays in view on the left, the days (or insights) on the right */
+  .web .log-body{display:grid;grid-template-columns:340px minmax(0,1fr);column-gap:28px;row-gap:0;align-items:start}
+  .web .log-body>*{grid-column:2;margin-bottom:14px}
+  .web .log-body>.quest{grid-column:1;grid-row:1/span 9;position:sticky;top:24px}
+  .web .drow{padding:10px 12px 10px 12px}
+  .web .dr-title{font-size:15px}
+  .web .dr-edit textarea{min-height:90px}
 
   /* the open day: tasks beside notes, pictures beside time */
-  .dr-edit{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
-  .dr-edit>:nth-child(-n+2){grid-column:1/-1}
+  .web .dr-edit{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
+  .web .dr-edit>:nth-child(-n+2){grid-column:1/-1}
 
   /* Profile header: photo, name and stats in one row under the cover */
   .pf-cover{height:84px}
