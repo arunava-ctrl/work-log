@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preload" href="fonts/Geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="A daily work log with streaks, XP, timers and automatic backups. Everything stays on your device.">
 <meta name="theme-color" content="#09090B">
@@ -15,6 +16,12 @@
 <title>Work Log</title>
 </head>
 <body>
+<script>
+// Before anything paints: keep the screens hidden until the first render (no half-built Home flashing on reload),
+// and set the saved light/dark choice now so the background is already right. The timeout is a safety net.
+(()=>{const r=document.documentElement;r.classList.add("boot");setTimeout(()=>r.classList.remove("boot"),2500);
+try{const t=(JSON.parse(localStorage.getItem("worklog.preview.v1"))||{}).theme;if(t==="dark")r.classList.add("app-dark");else if(t==="light")r.classList.add("app-light")}catch(e){}})();
+</script>
 <style>
 /* Geist + Geist Mono (SIL Open Font License), bundled so the app works offline */
 @font-face{font-family:'Geist';font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/Geist-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF}
@@ -826,6 +833,25 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
 .fx-corner svg{width:100%;height:100%;fill:currentColor}
 .thm-sw{transition:transform .3s cubic-bezier(.3,1.8,.5,1)}
 @media (hover:hover){.thm:hover .thm-sw{transform:scale(1.12) rotate(8deg)}}
+.boot .app,.boot .nav,.boot .fx{visibility:hidden}
+.boot *{transition:none!important}
+/* wide screens (desktop browsers, landscape tablets): use the room instead of a phone-width column */
+@media (min-width:900px){
+  .app{max-width:1240px;padding:8px 32px 130px}
+  .top{padding:26px 0 18px}
+  .mhead{padding:26px 0 6px}
+}
+@media (min-width:1100px){
+  .months{grid-template-columns:repeat(6,1fr)}
+  /* Work Log: the quest card stays in view on the left, the days (or insights) scroll on the right */
+  .log-body{display:grid;grid-template-columns:minmax(320px,380px) minmax(0,1fr);column-gap:24px;row-gap:0;align-items:start}
+  .log-body>*{grid-column:2;margin-bottom:14px}
+  .log-body>.quest{grid-column:1;grid-row:1/span 9;position:sticky;top:20px}
+  /* Profile: two balanced columns of cards */
+  .pf-stack{display:block;columns:2;column-gap:16px}
+  .pf-stack>*{break-inside:avoid;margin-bottom:16px}
+  .pf-stack .themes{grid-template-columns:repeat(4,1fr)}
+}
 </style>
 
 <div class="fx" id="fxBack" aria-hidden="true"></div>
@@ -1155,7 +1181,7 @@ const SCENES={
     back:D("snow",p[2],"--w:300px;--o:.13;--d:140s;top:-100px;right:-110px")+parts("snow",20,fall(p,{smin:5,smax:10,dmin:14,dmax:24,omin:.35,omax:.7,dx:70})),
     front:parts("snow",10,fall(p,{smin:12,smax:22,dmin:9,dmax:16,omin:.6,omax:.95,dx:90}))})
 };
-const theme=()=>THEMES.find(t=>t.id===S.accent)||THEMES[0];
+const theme=()=>THEMES.find(t=>t.id===S.accent)||THEMES.find(t=>t.id==="classic");
 function applyAccent(){
   const t=theme(),d=isDark(),r=document.documentElement.style,a=d?t.da:t.a,a2=d?t.da2:t.a2;
   r.setProperty("--accent",a);r.setProperty("--accent-2",a2);r.setProperty("--on-accent",d?"#0B0B1A":"#FFFFFF");
@@ -1207,7 +1233,7 @@ function riderImg(p){const k=stkSet();return k?stkImg(theme().id,k.rider,"mh-rid
 const KEY="worklog.preview.v1";
 // a fresh start: no days, no tags — everything in the app is what the user adds
 function seed(){
-  return {m3:1,entries:{},tags:[],schedules:{},defaultOff:[6,7],profile:{name:"",role:"",email:"",dept:"",hours:8,reminder:true,time:"18:00"},theme:"system",accent:"sunset",fx:true,timer:null};
+  return {m3:1,m4:1,entries:{},tags:[],schedules:{},defaultOff:[6,7],profile:{name:"",role:"",email:"",dept:"",hours:8,reminder:true,time:"18:00"},theme:"system",accent:"classic",fx:true,timer:null};
 }
 function load(){try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):null}catch(e){return null}}
 // a backup file: anything with days and tags (the Profile "Copy full backup" text, or an automatic backup)
@@ -1237,6 +1263,12 @@ if(!S.m3){
   for(const [id,r] of Object.entries(S.entries))if(r.status==="progress"&&!(r.tasks||"").trim()&&!(r.notes||"").trim()&&!(r.secs>0)&&!(r.man>0)&&!(r.photos&&r.photos.length)&&!(S.timer&&S.timer.id===id)){
     delete r.status;delete r.tasks;delete r.notes;if(!Object.keys(r).length)delete S.entries[id]}
   S.m3=1;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+}
+// the default theme is now Classic purple, like the app icon; move everyone still on the old Sunset default over once
+// (stamped as a fresh change so a synced copy doesn't bring Sunset back)
+if(!S.m4){
+  if(!S.accent||S.accent==="sunset"){S.accent="classic";S.mt=S.mt||{};S.mt["@accent"]=Date.now()}
+  S.m4=1;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
 }
 let saveT=null;
 const writeNow=()=>{saveT=null;stampChanges();
@@ -1846,7 +1878,7 @@ function logView(){
       <button class="sched-pill" data-act="schedule" aria-label="Work schedule for ${MONTHS[m-1]}: ${schedLabel(y,m)}. Change">${ic.cal}<span>${schedLabel(y,m)}</span></button></div>
     ${(p=>`<div class="mh-track ${stkSet()?"riding":""}" aria-hidden="true"><div class="mh-bar"><i style="width:${p}%"></i></div>${riderImg(p)}</div>`)(s.work?Math.round(Math.min(s.done,s.work)/s.work*100):0)}
   </header>
-  <div class="stack" style="margin-top:14px;gap:14px">
+  <div class="stack log-body" style="margin-top:14px;gap:14px">
     ${questCard(g)}
     <div class="seg view-seg" role="tablist" aria-label="Work log view">
       <button role="tab" data-view="days" aria-pressed="${U.view!=="insights"}">Days <span class="seg-n num">${s.done}/${s.work}</span></button>
@@ -2016,7 +2048,7 @@ function profileView(){
       </div>
     </div>
   </header>
-  <div class="stack" style="margin-top:14px">
+  <div class="stack pf-stack" style="margin-top:14px">
   ${accountCard()}
   <section class="card stack" id="themesCard">
     <div class="row between"><span class="eyebrow">Colour theme</span><span class="note" id="themeName">${theme().name} · ${theme().tag}</span></div>
@@ -2426,6 +2458,9 @@ setInterval(()=>{if(!S.timer)return;const [y,m,d]=parseId(S.timer.id),x=day(y,m,
 initSync();
 render();
 applyScene();
+// show the app once its first screen and font are ready (fonts are local, so this is a few ms; never wait long)
+Promise.race([document.fonts?document.fonts.ready:0,new Promise(r=>setTimeout(r,350))]).then(()=>{
+  document.documentElement.classList.remove("boot");if(app.classList.contains("enter")){app.classList.remove("enter");void app.offsetWidth;app.classList.add("enter")}});
 syncReminder();
 loadBkFile();
 // sync when the app comes back to the front, and every minute while it's open (a quick version check)
