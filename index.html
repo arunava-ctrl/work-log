@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="preload" href="fonts/Geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob: https://*.googleusercontent.com; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://api.github.com https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="A daily work log with streaks, XP, timers and automatic backups. Everything stays on your device.">
 <meta name="theme-color" content="#09090B">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1180,6 +1182,8 @@ const TODAY=idOf(TY,TM,TD);
 const parseId=id=>id.split("-").map(Number);
 const cmpId=(a,b)=>a<b?-1:a>b?1:0;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// backups and Drive sync can carry anything: only a plain hex colour reaches a style attribute
+const col=c=>/^#[0-9a-f]{3,8}$/i.test(c)?c:"#71717A";
 function fmtTimer(s){s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${pad(m)}:${pad(x)}`:`${pad(m)}:${pad(x)}`}
 // "1h 30m", "45m": time typed in by hand
 const fmtDur=s=>{const t=Math.round(s/60),h=Math.floor(t/60),m=t%60;return h?(m?`${h}h ${m}m`:`${h}h`):`${m}m`};
@@ -1632,6 +1636,7 @@ const app=$("#app");
 
 // Android app bridge (present only inside the APK): system bar colours, reminders, sharing
 const APP=window.WorkLogApp||null;
+const appVer=(()=>{try{return APP&&APP.version?String(APP.version()):""}catch(e){return ""}})();
 const syncReminder=()=>{try{APP&&APP.setReminder(!!S.profile.reminder,S.profile.time||"18:00");syncSkipDays()}catch(e){}};
 // dates (today + the next two weeks) the nudge should stay quiet: days off, and today once something is logged
 function syncSkipDays(){
@@ -1756,7 +1761,7 @@ function homeView(){
 }
 // profile picture (or initials, or a plain person icon) — shared by Home, the profile card and Profile
 function initials(){return (S.profile.name||"").split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase()}
-function avatarInner(){return S.profile.photo?`<img class="av-img" src="${S.profile.photo}" alt="">`:acct&&acct.pic?`<img class="av-img" src="${esc(acct.pic)}" alt="" referrerpolicy="no-referrer">`:initials()||ic.user}
+function avatarInner(){return S.profile.photo?`<img class="av-img" src="${esc(S.profile.photo)}" alt="">`:acct&&acct.pic?`<img class="av-img" src="${esc(acct.pic)}" alt="" referrerpolicy="no-referrer">`:initials()||ic.user}
 function heroCard(stats){
   const g=gameStats(),lv=g.lv;
   const logged=stats.reduce((a,s)=>a+s.logged,0),done=stats.reduce((a,s)=>a+s.done,0),secs=stats.reduce((a,s)=>a+s.secs,0);
@@ -2035,7 +2040,7 @@ function rowHead(d){
     <button class="dr-main" data-openday="${d.id}" aria-expanded="${open}">
       <span class="dr-date"><span class="dr-dow">${DOW[d.dow-1]}</span><span class="dr-d num">${d.d}</span></span>
       <span class="dr-body"><span class="dr-title ${first?"":"ph"}">${title}</span>
-        <span class="dr-meta">${today?'<span class="todaytag">Today</span>':""}${d.tag?`<span class="dr-tag" style="--c:${d.tag.color}"><i></i>${esc(d.tag.name)}</span>`:""}${d.secs>0||run?`<span class="dr-time num ${run?"run":""}" data-tick="${d.id}">${fmtTimer(d.secs)}</span>`:""}${d.notes.trim()?`<span class="dr-note">Notes</span>`:""}${d.photos.length?`<span class="dr-note">${d.photos.length} photo${d.photos.length>1?"s":""}</span>`:""}</span></span>${d.has?`<span class="dr-xp num">+${dayXP(d)}<small>XP</small></span>`:""}
+        <span class="dr-meta">${today?'<span class="todaytag">Today</span>':""}${d.tag?`<span class="dr-tag" style="--c:${col(d.tag.color)}"><i></i>${esc(d.tag.name)}</span>`:""}${d.secs>0||run?`<span class="dr-time num ${run?"run":""}" data-tick="${d.id}">${fmtTimer(d.secs)}</span>`:""}${d.notes.trim()?`<span class="dr-note">Notes</span>`:""}${d.photos.length?`<span class="dr-note">${d.photos.length} photo${d.photos.length>1?"s":""}</span>`:""}</span></span>${d.has?`<span class="dr-xp num">+${dayXP(d)}<small>XP</small></span>`:""}
       <span class="dr-chev">${BI.chev}</span>
     </button>${d.status==="done"?dayStk(d.id):""}`;
 }
@@ -2051,13 +2056,13 @@ function rowEdit(d){
     <div class="de-sec"><span class="de-lbl">Notes</span>
       <textarea id="n-${d.id}" class="notes" data-field="notes" data-id="${d.id}" rows="1" placeholder="Notes, blockers, links" aria-label="Notes for ${MSHORT[d.m-1]} ${d.d}">${esc(d.notes)}</textarea></div>
     <div class="de-sec"><span class="de-lbl">Pictures<span class="num">${d.photos.length}/${PHOTO_MAX}</span></span>
-      <div class="photos">${d.photos.map((p,i)=>`<div class="pic"><button class="view" data-photo-view="${d.id}:${i}" aria-label="View picture ${i+1}"><img src="${p}" alt="Picture ${i+1} for ${MSHORT[d.m-1]} ${d.d}"></button><button class="rm" data-photo-rm="${d.id}:${i}" aria-label="Remove picture ${i+1}">${ic.x}</button></div>`).join("")}
+      <div class="photos">${d.photos.map((p,i)=>`<div class="pic"><button class="view" data-photo-view="${d.id}:${i}" aria-label="View picture ${i+1}"><img src="${esc(p)}" alt="Picture ${i+1} for ${MSHORT[d.m-1]} ${d.d}"></button><button class="rm" data-photo-rm="${d.id}:${i}" aria-label="Remove picture ${i+1}">${ic.x}</button></div>`).join("")}
         ${d.photos.length<PHOTO_MAX?`<button class="pic-add" data-addpic="${d.id}" aria-haspopup="menu">${ic.cam}<span>Add picture</span></button><input type="file" id="cam-${d.id}" data-photo-in="${d.id}" accept="image/*" capture="environment" hidden><input type="file" id="ph-${d.id}" data-photo-in="${d.id}" accept="image/*" multiple hidden>`:""}</div></div>
     <div class="de-sec"><span class="de-lbl">Time &amp; project</span>
       <div class="dr-tools">
         <button class="timer num ${run?"run":""}" data-timer="${d.id}" aria-label="${run?"Pause":"Start"} timer">${run?ic.pause:ic.play}<span>${fmtTimer(d.tsecs)}</span></button>
         <button class="mantime num ${d.man?"has":""}" data-mantime="${d.id}" aria-label="${d.man?`Manual time ${fmtDur(d.man)}, edit`:"Add time by hand"}">${d.man?ic.pen+fmtDur(d.man):ic.plus+"Add time"}</button>
-        <button class="tagpill" data-tagpick="${d.id}" ${d.tag?`style="--c:${d.tag.color}"`:""}><i></i>${d.tag?esc(d.tag.name):"Add tag"}</button>
+        <button class="tagpill" data-tagpick="${d.id}" ${d.tag?`style="--c:${col(d.tag.color)}"`:""}><i></i>${d.tag?esc(d.tag.name):"Add tag"}</button>
       </div></div>
   </div>`;
 }
@@ -2073,7 +2078,7 @@ async function addPhotos(id,files){
 function viewPhoto(id,i){
   const src=(S.entries[id]?.photos||[])[i];if(!src)return;
   const lb=document.createElement("div");lb.className="lb";lb.setAttribute("role","dialog");lb.setAttribute("aria-label","Picture");
-  lb.innerHTML=`<img src="${src}" alt="Picture"><button class="icon-btn" aria-label="Close picture">${ic.x}</button>`;
+  lb.innerHTML=`<img src="${esc(src)}" alt="Picture"><button class="icon-btn" aria-label="Close picture">${ic.x}</button>`;
   const close=()=>{lb.remove();document.removeEventListener("keydown",k)},k=e=>{if(e.key==="Escape")close()};
   lb.addEventListener("click",close);document.addEventListener("keydown",k);document.body.appendChild(lb);
 }
@@ -2153,6 +2158,7 @@ function profileView(){
       <button class="btn danger" data-act="wipe">${ic.trash}Erase all data</button>
     </div>
     <input type="file" id="imp" accept=".json,application/json" hidden>
+    ${appVer?`<div class="row between"><span class="note">Version ${esc(appVer)}</span><button class="linkbtn" data-act="upd">Check for updates</button></div>`:""}
   </section>
   </div>`;
 }
@@ -2234,10 +2240,10 @@ function sheet(html,mount){
   document.body.appendChild(s);mount&&mount(s.querySelector(".sheet"),close);
 }
 let toastT;
-function toast(msg,undo){
+function toast(msg,undo,label){
   document.querySelectorAll(".toast").forEach(t=>t.remove());clearTimeout(toastT);
   const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.innerHTML=`<span>${msg}</span>`;
-  if(undo){const b=document.createElement("button");b.textContent="Undo";b.onclick=()=>{undo();t.remove()};t.appendChild(b)}
+  if(undo){const b=document.createElement("button");b.textContent=label||"Undo";b.onclick=()=>{undo();t.remove()};t.appendChild(b)}
   document.body.appendChild(t);toastT=setTimeout(()=>t.remove(),undo?6000:2600);
 }
 function confirmSheet(title,body,label,fn){
@@ -2272,7 +2278,7 @@ function tagSheet(id){
     <div class="row between"><h2>Project tag</h2><button class="icon-btn" data-close aria-label="Close">${ic.x}</button></div>
     <div class="chips" style="flex-wrap:wrap">
       <button class="chip" data-t="" aria-pressed="${!r.tagId}">No tag</button>
-      ${S.tags.map(t=>`<button class="chip" data-t="${t.id}" aria-pressed="${r.tagId===t.id}" style="--c:${t.color}"><i></i>${esc(t.name)}</button>`).join("")}
+      ${S.tags.map(t=>`<button class="chip" data-t="${esc(t.id)}" aria-pressed="${r.tagId===t.id}" style="--c:${col(t.color)}"><i></i>${esc(t.name)}</button>`).join("")}
     </div>
     <div class="eyebrow">New tag</div>
     <div class="field"><label for="newtag">Name</label><input id="newtag" placeholder="e.g. Client onboarding" maxlength="32"></div>
@@ -2496,6 +2502,7 @@ app.addEventListener("click",e=>{
     clearlogs:()=>deleteLogsSheet(),
     jump:()=>{const d=document.getElementById("d-"+TODAY);d&&d.scrollIntoView({behavior:"smooth",block:"start"})},
     rem:()=>{S.profile.reminder=!S.profile.reminder;save();setToggle(el,S.profile.reminder);$("#p-time").disabled=!S.profile.reminder;syncReminder()},
+    upd:()=>checkUpdate(true),
     csv:()=>exportSheet("Spreadsheet export",csv()),
     json:()=>exportSheet("Full backup",JSON.stringify({...S,timer:null},null,1)),
     wipe:()=>confirmSheet("Erase everything?","Deletes every day, tag, schedule and your profile from this device and from the automatic backup. Older daily backup copies in Documents › WorkLog stay. This can't be undone.","Erase all data",()=>{S={...seed(),theme:S.theme,accent:S.accent,fx:S.fx,stk:S.stk,abk:S.abk,mt:S.mt};clearTimeout(saveT);writeNow();clearTimeout(bkT);runBackup(true);render();toast("All data erased")}),
@@ -2546,6 +2553,38 @@ window.__back=()=>{
   if(U.tab!=="home"){document.querySelector('.nav [data-tab="home"]').click();return true}
   return false;
 };
+// Android app: new versions are published as GitHub releases (tag v1.3 + WorkLog.apk). Checked once a day;
+// "Later" hides that version until the next one. Android only installs it over this app if the signature matches.
+const REPO="arunava-ctrl/work-log",newer=(a,b)=>{const x=a.split(".").map(Number),y=b.split(".").map(Number);
+  for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false};
+async function checkUpdate(manual){
+  if(!appVer)return;
+  let last=0,skip="";try{last=+localStorage.getItem("worklog.updAt")||0;skip=localStorage.getItem("worklog.updSkip")||""}catch(e){}
+  if(!manual&&Date.now()-last<864e5)return;
+  let rel;try{const r=await fetch(`https://api.github.com/repos/${REPO}/releases/latest`,{headers:{Accept:"application/vnd.github+json"},cache:"no-store"});
+    if(!r.ok)throw 0;rel=await r.json();localStorage.setItem("worklog.updAt",Date.now())}catch(e){if(manual)toast("Couldn't check for updates — are you online?");return}
+  const v=String(rel.tag_name||"").replace(/^v/i,""),apk=(rel.assets||[]).find(a=>/\.apk$/i.test(a.name)),url=apk&&apk.browser_download_url;
+  const ok=/^\d+(\.\d+)*$/.test(v)&&typeof url==="string"&&url.startsWith(`https://github.com/${REPO}/releases/download/`);
+  if(!ok||!newer(v,appVer)){if(manual)toast(`You're on the latest version (${esc(appVer)})`);return}
+  if(!manual&&skip===v)return;
+  const notes=String(rel.body||"").split(/\r?\n/).map(l=>l.replace(/^[-*]\s+/,"").replace(/\*\*/g,"").trim()).filter(l=>l&&!/^(install|web version)/i.test(l)).slice(0,6);
+  sheet(`<div class="stack">
+    <div class="row between"><h2>Update available</h2><button class="icon-btn" data-close aria-label="Close">${ic.x}</button></div>
+    <p class="note" style="margin:0;font-size:13.5px">Work Log <b>${esc(v)}</b> is out (you have ${esc(appVer)}). Your log stays as it is.</p>
+    ${notes.length?`<ul class="note" style="margin:0;padding-left:18px">${notes.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>`:""}
+    <button class="btn primary full" data-upd-go>${ic.down}Download update</button>
+    <button class="btn ghost full" data-close data-upd-later>Later</button>
+    <p class="note" style="margin:0">The file downloads in your browser — open it and tap <b>Update</b>.</p></div>`,(el,close)=>{
+    el.querySelector("[data-upd-go]").onclick=()=>{close();APP.openUrl?APP.openUrl(url):location.href=url};
+    el.querySelector("[data-upd-later]").onclick=()=>{try{localStorage.setItem("worklog.updSkip",v)}catch(e){}};
+  });
+}
+setTimeout(()=>{if(!document.querySelector(".scrim"))checkUpdate(false)},4000);
+// web app: a newer version was installed in the background while this tab was open
+if("serviceWorker" in navigator&&navigator.serviceWorker.controller){
+  navigator.serviceWorker.addEventListener("controllerchange",()=>toast("A new version is ready",()=>location.reload(),"Reload"));
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{})});
+}
 })();
 </script>
 
