@@ -547,6 +547,10 @@ textarea::placeholder{color:var(--faint)}
 .nav button{white-space:nowrap}
 /* very narrow phones: step the labels back down so "Work Log" still fits its third of the bar */
 @media (max-width:350px){.nav button{font-size:13px;gap:5px}.nav svg{width:18px;height:18px}}
+/* the web app has a 4th tab ("Get app"); the Android app keeps 3 */
+.web .nav .dock{max-width:440px}.web .nav .ind{width:calc((100% - 12px)/4)}
+a.btn{text-decoration:none}
+.gp-steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:13.5px}
 
 /* sheet */
 .scrim{position:fixed;inset:0;background:var(--scrim);backdrop-filter:blur(4px);z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
@@ -928,9 +932,11 @@ body{background-image:radial-gradient(70% 45% at 88% -8%,var(--accent-soft),tran
     <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
     <button data-tab="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M9 11h6M9 15h4"/></svg>Work Log</button>
     <button data-tab="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profile</button>
+    <button data-tab="app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Get app</button>
     </div>
   </div>
 </nav>
+<script>if(window.WorkLogApp)document.querySelector('.nav [data-tab="app"]').remove()</script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
     <!-- Lens maps and displacement strengths are set in JS for each element's exact size.
@@ -1737,7 +1743,7 @@ function render(){
     if(ind.style.translate&&ind.style.translate!==t){ind.classList.add("moving");clearTimeout(ind._mv);ind._mv=setTimeout(()=>ind.classList.remove("moving"),140)}
     ind.style.translate=t}});
   try{sessionStorage.setItem("wl.tab",U.tab)}catch(e){}
-  app.innerHTML=U.tab==="home"?homeView():U.tab==="log"?logView():profileView();
+  app.innerHTML=U.tab==="home"?homeView():U.tab==="log"?logView():U.tab==="app"&&!APP?appView():profileView();
   // moving to another screen (or month/year): cards rise in one after another and the numbers count up
   const key=U.tab+"|"+U.year+"|"+U.month;
   if(key!==render.key){render.key=key;
@@ -1751,6 +1757,7 @@ function render(){
       setTimeout(()=>{if(el.isConnected)el.textContent=to},900)});
   }
   if(U.tab==="log"){renderList();fitAll()}
+  if(U.tab==="app"||U.tab==="profile")setTimeout(fillRel);
   if(U.tab==="log"&&U.scrollToday){U.scrollToday=false;const el=document.getElementById("d-"+TODAY);if(el)el.scrollIntoView({block:"start"})}
 }
 
@@ -2176,8 +2183,12 @@ function profileView(){
       <button class="btn danger" data-act="wipe">${ic.trash}Erase all data</button>
     </div>
     <input type="file" id="imp" accept=".json,application/json" hidden>
-    ${appVer?`<div class="row between"><span class="note">Version ${esc(appVer)}</span><button class="linkbtn" data-act="upd">Check for updates</button></div>`:""}
   </section>
+  ${appVer?`<section class="card stack" id="wnCard">
+    <span class="eyebrow">What's new</span>
+    <div class="row between"><b>Work Log ${esc(appVer)}</b><button class="linkbtn" data-act="upd">Check for updates</button></div>
+    <div id="wnBody" class="note">${notesHtml(cachedNotes(appVer))||"Loading…"}</div>
+  </section>`:""}
   </div>`;
 }
 
@@ -2586,6 +2597,50 @@ window.__back=()=>{
   if(U.tab!=="home"){document.querySelector('.nav [data-tab="home"]').click();return true}
   return false;
 };
+// ---- GitHub release info: Get app tab, What's new card and the one-time notes after an update ----
+const relNotes=body=>String(body||"").split(/\r?\n/).map(l=>l.replace(/^[-*]\s+/,"").replace(/\*\*/g,"").trim()).filter(l=>l&&!/^(install|web version)/i.test(l)).slice(0,6);
+const notesHtml=n=>n&&n.length?`<ul style="margin:0;padding-left:18px">${n.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>`:"";
+const cachedNotes=v=>{try{return JSON.parse(localStorage.getItem("worklog.rn."+v)||"null")}catch(e){return null}};
+const relCache={};
+async function getRel(which){ // "latest", or a version such as "1.7"; null = couldn't reach GitHub
+  if(relCache[which])return relCache[which];
+  try{const r=await fetch(`https://api.github.com/repos/${REPO}/releases/${which==="latest"?"latest":"tags/v"+which}`,{headers:{Accept:"application/vnd.github+json"}});
+    if(r.status===404)return relCache[which]={};if(!r.ok)throw 0;return relCache[which]=await r.json()}catch(e){return null}}
+async function fillRel(){
+  if(document.getElementById("gpBody")){ // the button already works without GitHub's API; this adds the version, size and notes
+    const rel=await getRel("latest"),el=document.getElementById("gpNotes"),btn=document.getElementById("gpBtn");if(!el||!rel||!rel.tag_name)return;
+    const apk=(rel.assets||[]).find(a=>/\.apk$/i.test(a.name)),n=relNotes(rel.body);
+    btn.innerHTML=`${ic.down}Download APK · v${esc(String(rel.tag_name).replace(/^v/i,""))}${apk?` · ${(apk.size/1048576).toFixed(1)} MB`:""}`;
+    el.innerHTML=n.length?`<b>What's new</b>${notesHtml(n)}`:""}
+  if(document.getElementById("wnBody")){
+    const rel=await getRel(appVer),el=document.getElementById("wnBody");if(!el||!rel)return;
+    const n=relNotes(rel.body);try{localStorage.setItem("worklog.rn."+appVer,JSON.stringify(n))}catch(e){}
+    el.innerHTML=notesHtml(n)||"No release notes for this version."}}
+function appView(){
+  return `<header class="mhead"><h1>Get the app</h1><p class="note" style="margin:6px 0 0;flex-basis:100%">Work Log for Android works offline and reminds you at the end of the day. It updates itself from inside the app.</p></header>
+  <div class="stack" style="margin-top:14px">
+  <section class="card stack"><span class="eyebrow">Android · APK</span><div id="gpBody"><a class="btn primary full" id="gpBtn" href="https://github.com/arunava-ctrl/work-log/releases/latest/download/WorkLog.apk" rel="noopener" download>${ic.down}Download APK</a><div class="note" id="gpNotes" style="margin-top:12px"></div></div></section>
+  <section class="card stack"><span class="eyebrow">Install</span>
+    <ol class="gp-steps"><li>Download the file on your phone and open it.</li><li>If Android asks, allow installs from your browser, then tap <b>Install</b>.</li><li>Bring your log over: <b>Profile → Copy full backup</b> here, then <b>Restore from backup</b> in the app.</li></ol></section>
+  </div>`}
+// after an update (checked on start, Android app only): the release notes show once
+async function whatsNew(){
+  if(!appVer||document.querySelector(".scrim"))return;
+  let seen="";try{seen=localStorage.getItem("worklog.seenVer")||""}catch(e){return}
+  const mark=()=>{try{localStorage.setItem("worklog.seenVer",appVer)}catch(e){}};
+  if(seen===appVer)return;
+  if(!seen&&!loginSeen())return mark(); // a fresh install: nothing to compare with
+  const rel=await getRel(appVer);if(!rel)return; // offline: try again next start
+  const notes=relNotes(rel.body);try{localStorage.setItem("worklog.rn."+appVer,JSON.stringify(notes))}catch(e){}
+  if(!notes.length)return mark();
+  if(document.querySelector(".scrim"))return;
+  mark();
+  sheet(`<div class="stack">
+    <div class="row between"><h2>Updated to ${esc(appVer)}</h2><button class="icon-btn" data-close aria-label="Close">${ic.x}</button></div>
+    <div class="note" style="font-size:13.5px">${notesHtml(notes)}</div>
+    <button class="btn primary full" data-close>Got it</button></div>`);
+}
+setTimeout(whatsNew,2500);
 // Android app: new versions are published as GitHub releases (tag v1.3 + WorkLog.apk). Checked once a day;
 // "Later" hides that version until the next one. Android only installs it over this app if the signature matches.
 const REPO="arunava-ctrl/work-log",newer=(a,b)=>{const x=a.split(".").map(Number),y=b.split(".").map(Number);
@@ -2600,7 +2655,7 @@ async function checkUpdate(manual){
   const ok=/^\d+(\.\d+)*$/.test(v)&&typeof url==="string"&&url.startsWith(`https://github.com/${REPO}/releases/download/`);
   if(!ok||!newer(v,appVer)){if(manual)toast(`You're on the latest version (${esc(appVer)})`);return}
   if(!manual&&skip===v)return;
-  const notes=String(rel.body||"").split(/\r?\n/).map(l=>l.replace(/^[-*]\s+/,"").replace(/\*\*/g,"").trim()).filter(l=>l&&!/^(install|web version)/i.test(l)).slice(0,6);
+  const notes=relNotes(rel.body);
   sheet(`<div class="stack">
     <div class="row between"><h2>Update available</h2><button class="icon-btn" data-close aria-label="Close">${ic.x}</button></div>
     <p class="note" style="margin:0;font-size:13.5px">Work Log <b>${esc(v)}</b> is out (you have ${esc(appVer)}). Your log stays as it is.</p>
