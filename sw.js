@@ -1,6 +1,6 @@
 /* Work Log · offline support. The app shell is refreshed from the network when online and served
    from the cache when not; fonts, icons and stickers are cached the first time they're used. */
-const VERSION="1b727c782b",SHELL="wl-shell-"+VERSION,ASSETS="wl-assets-"+VERSION;
+const VERSION="46d14950cb",SHELL="wl-shell-"+VERSION,ASSETS="wl-assets-"+VERSION;
 const SHELL_FILES=["./","index.html","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png",
   "fonts/Geist-latin.woff2","fonts/Geist-latin-ext.woff2","fonts/GeistMono-latin.woff2","fonts/GeistMono-latin-ext.woff2"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(SHELL).then(c=>c.addAll(SHELL_FILES.map(f=>new Request(f,{cache:"reload"})))).then(()=>self.skipWaiting())));

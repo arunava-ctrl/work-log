@@ -1345,7 +1345,7 @@ if(!S.m4){
 let saveT=null;
 const writeNow=()=>{saveT=null;stampChanges();
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save — this device's storage is full. Remove some photos.")}
-  syncSkipDays();otSync();scheduleBackup();scheduleSync()};
+  syncSkipDays();otSync();widgetSync();scheduleBackup();scheduleSync()};
 function save(){clearTimeout(saveT);saveT=setTimeout(writeNow,350)}
 // the app can be closed right after a change: write it (and its backup) before the page goes away
 const flushSave=()=>{if(saveT!==null){clearTimeout(saveT);writeNow()}if(bkT!==null){clearTimeout(bkT);runBackup()}};
@@ -2324,7 +2324,7 @@ function tagSheet(id){
 }
 
 /* ---------- actions ---------- */
-function stopTimer(){if(!S.timer)return;const r=raw(S.timer.id);r.secs=(r.secs||0)+(Date.now()-S.timer.start)/1000;const id=S.timer.id;S.timer=null;return id}
+function stopTimer(at=Date.now()){if(!S.timer)return;const r=raw(S.timer.id);r.secs=(r.secs||0)+Math.max(0,at-S.timer.start)/1000;const id=S.timer.id;S.timer=null;return id}
 function toggleTimer(id){
   const was=S.timer&&S.timer.id;const stopped=stopTimer();
   if(was!==id){S.timer={id,start:Date.now()};const r=raw(id),[y,m,d]=parseId(id);if(day(y,m,d).status!=="done")r.status="progress";delete r.auto}
@@ -2573,8 +2573,35 @@ Promise.race([document.fonts?document.fonts.ready:0,new Promise(r=>setTimeout(r,
 syncReminder();
 // the notification's "Stop timer" button opens the app and leaves a flag for the page to pick up
 window.__ot=()=>{try{if(APP&&APP.takeStop&&APP.takeStop())otStop()}catch(e){}};
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){otSync();window.__ot()}});
-otSync();window.__ot();
+// home-screen widget: it shows today's tasks and timer (pushed here after every save); its Start / Pause / End
+// buttons queue actions with their time, applied below the next time the app is in front. "Add task" opens today's day.
+function widgetSync(){
+  if(!APP||!APP.widget)return;
+  try{const t=new Date(),id=idOf(t.getFullYear(),t.getMonth()+1,t.getDate()),r=S.entries[id]||{},run=!!(S.timer&&S.timer.id===id);
+    APP.widget(JSON.stringify({day:id,tasks:r.tasks||"",run,start:run?S.timer.start:0,acc:Math.round(r.secs||0),done:r.status==="done"}))}catch(e){}}
+window.__w=()=>{
+  if(!APP||!APP.takeWidget)return;
+  let w;try{w=JSON.parse(APP.takeWidget()||"{}")}catch(e){return}
+  let ch=false;
+  for(const a of w.acts||[]){
+    const id=a.day,t=+a.t||Date.now();
+    if(a.act==="start"){
+      if(S.timer&&S.timer.id===id)continue;
+      stopTimer(t);S.timer={id,start:t};const r=raw(id),[y,m,d]=parseId(id);
+      if(day(y,m,d).status!=="done")r.status="progress";delete r.auto;ch=true
+    }else{
+      if(S.timer&&S.timer.id===id){stopTimer(t);ch=true}
+      if(a.act==="end")setStatus(id,"done")
+    }
+  }
+  if(ch){otSet(0);save();render()}
+  if(w.add){ // open today's day with the task box ready
+    U.year=TY;U.month=TM;U.tab="log";U.open=TODAY;U.scrollToday=true;render();
+    setTimeout(()=>{const ta=document.querySelector(`#d-${TODAY} textarea`);if(ta){ta.focus({preventScroll:true});try{APP.showKeyboard()}catch(e){}}},350)
+  }
+  widgetSync()};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){otSync();window.__ot();window.__w()}});
+otSync();window.__ot();window.__w();widgetSync();
 loadBkFile();
 // sync when the app comes back to the front, and every minute while it's open (a quick version check)
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&acct)syncNow()});
@@ -2676,7 +2703,11 @@ async function checkUpdate(manual){
     el.querySelector("[data-upd-later]").onclick=()=>{try{localStorage.setItem("worklog.updSkip",v)}catch(e){}};
   });
 }
-setTimeout(()=>{if(!document.querySelector(".scrim"))checkUpdate(false)},4000);
+setTimeout(()=>{if(!document.querySelector(".scrim")&&!window.__updBusy)checkUpdate(false)},4000);
+// the "please update" notification was tapped: show the update sheet now, even if it was checked or skipped today
+window.__upd=()=>{try{if(APP&&APP.takeOpenUpdate&&APP.takeOpenUpdate()){window.__updBusy=1;checkUpdate(true)}}catch(e){}};
+setTimeout(window.__upd,1500);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)window.__upd()});
 // web app: a newer version was installed in the background while this tab was open
 if("serviceWorker" in navigator&&navigator.serviceWorker.controller){
   navigator.serviceWorker.addEventListener("controllerchange",()=>toast("A new version is ready",()=>location.reload(),"Reload"));
