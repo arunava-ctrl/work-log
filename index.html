@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="preload" href="fonts/Geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob: https://*.googleusercontent.com; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://api.github.com https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob: https://*.googleusercontent.com; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://api.github.com https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<script>if(top!==self){try{top.location=self.location}catch(e){document.documentElement.hidden=true}}</script>
 <meta name="description" content="A daily work log with streaks, XP, timers and automatic backups. Everything stays on your device.">
 <meta name="theme-color" content="#09090B">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1338,7 +1339,7 @@ if(!S.m4){
 let saveT=null;
 const writeNow=()=>{saveT=null;stampChanges();
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Couldn't save — this device's storage is full. Remove some photos.")}
-  syncSkipDays();scheduleBackup();scheduleSync()};
+  syncSkipDays();otSync();scheduleBackup();scheduleSync()};
 function save(){clearTimeout(saveT);saveT=setTimeout(writeNow,350)}
 // the app can be closed right after a change: write it (and its backup) before the page goes away
 const flushSave=()=>{if(saveT!==null){clearTimeout(saveT);writeNow()}if(bkT!==null){clearTimeout(bkT);runBackup()}};
@@ -1450,11 +1451,12 @@ let gis=null,tokWait=null;
 function loadGis(){return gis||(gis=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://accounts.google.com/gsi/client";sc.async=true;sc.onload=res;sc.onerror=()=>{gis=null;rej(new Error("offline"))};document.head.appendChild(sc)}))}
 window.__gAuthDone=(token,email,err)=>{const w=tokWait;tokWait=null;if(!w)return;
   if(token){tok=token;tokExp=Date.now()+50*60e3;w.res({token,email})}else w.rej(new Error(err||"cancelled"))};
-async function getToken(interactive){
+async function getToken(interactive,stale){
   if(!interactive&&tok&&Date.now()<tokExp-60e3)return tok;
   if(APP&&APP.gAuth){
     if(tokWait)tokWait.rej(new Error("superseded"));
-    const r=await new Promise((res,rej)=>{tokWait={res,rej};try{APP.gAuth(!!interactive)}catch(e){tokWait=null;rej(e)}});
+    const r=await new Promise((res,rej)=>{tokWait={res,rej};try{stale&&APP.gRefresh?APP.gRefresh(stale):APP.gAuth(!!interactive)}catch(e){tokWait=null;rej(e)}})
+      .catch(e=>{if(!/superseded/.test(e.message))e.auth=true;throw e});
     if(r.email&&acct&&!acct.email)acct.email=r.email;return r.token}
   if(!GCLIENT)throw new Error("notset");
   await loadGis();
@@ -1466,10 +1468,10 @@ async function getToken(interactive){
     tc.requestAccessToken(interactive?{prompt:"select_account"}:{prompt:"",login_hint:acct&&acct.email||undefined});
   });
 }
-async function gfetch(url,opt={},retry=true){
-  const t=await getToken(false);
+async function gfetch(url,opt={},stale=null){
+  const t=await getToken(false,stale);
   const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:"Bearer "+t}});
-  if(r.status===401&&retry){tok=null;tokExp=0;return gfetch(url,opt,false)}
+  if(r.status===401&&!stale){tok=null;tokExp=0;return gfetch(url,opt,t)}
   if(!r.ok)throw new Error("http "+r.status);
   return r;
 }
@@ -1506,14 +1508,16 @@ async function syncNow(){
       const R=await (await gfetch(`${DRIVE}/files/${meta.id}?alt=media`)).json();
       if(R&&validBackup(R)){const m=mergeRemote(R);if(m.changed)applyMerged();push=m.behind}
     }
+    const lmax=maxMt(); // taken as the upload is built: edits made while it uploads go up on the next sync
     if(push&&(hasData(S)||meta))meta=await uploadSync(meta&&meta.id);
-    jset(SYNC,{fileId:meta&&meta.id,version:meta&&meta.version,lmax:maxMt(),at:Date.now()});
+    jset(SYNC,{fileId:meta&&meta.id,version:meta&&meta.version,lmax,at:Date.now()});
     needTap=false;setSync("ok",{at:Date.now()});
   }catch(e){
     const m=e&&e.message||"";
     // a browser can't refresh the sign-in without a tap; the next tap anywhere does it
     if(!APP&&/popup|interaction|consent|login/.test(m)){needTap=true;setSync("tap",{at:st.at})}
-    else setSync("err",{at:st.at,msg:/notset/.test(m)?"Google sign-in isn't set up yet":/http 40[13]|auth|consent|cancel/.test(m)?"Sign in again to keep syncing":navigator.onLine===false?"Offline — will sync when you're back online":"Couldn't reach Google Drive"});
+    else if(e&&e.auth||/http 40[13]|auth|consent|cancel/.test(m))setSync("err",{at:st.at,auth:true,msg:APP?"Tap Sync now to sign in again":"Sign in again to keep syncing"});
+    else setSync("err",{at:st.at,msg:/notset/.test(m)?"Google sign-in isn't set up yet":navigator.onLine===false?"Offline — will sync when you're back online":"Couldn't reach Google Drive"});
   }finally{syncing=false;if(syncAgain){syncAgain=false;scheduleSync()}}
 }
 async function signIn(btn){
@@ -1526,7 +1530,7 @@ async function signIn(btn){
     if(acct.email&&!S.profile.email)S.profile.email=acct.email;
     jset(SYNC,null);save();await syncNow();
     toast(syncSt.state==="ok"?"Signed in — your log is synced with Google Drive":"Signed in");return true;
-  }catch(e){const m=e&&e.message||"";if(!/cancel|closed|access_denied|superseded/.test(m))toast(/offline|Failed to fetch/.test(m)?"You're offline — connect to sign in":"Couldn't sign in with Google");return false}
+  }catch(e){const m=e&&e.message||"";if(!/cancel|closed|access_denied|superseded/.test(m))toast(/offline|Failed to fetch|network|connect|^7:/i.test(m)||navigator.onLine===false?"Can't reach Google — check this device's internet connection":`Couldn't sign in with Google${m?` (${esc(m.slice(0,90))})`:""}`);return false}
 }
 function signOut(){
   confirmSheet("Sign out of Google?","Your log stays on this device and in your Google Drive. This device just stops syncing until you sign in again.","Sign out",()=>{
@@ -1645,6 +1649,19 @@ function syncSkipDays(){
     for(let i=0;i<14;i++){const x=day(c.getFullYear(),c.getMonth()+1,c.getDate());if((x.off&&!x.has)||(i===0&&x.has))skip.push(x.id);c.setDate(c.getDate()+1)}
     APP.setSkipDays(skip.join(","))}catch(e){}
 }
+/* overtime nudge: once the day's time passes the target hours, ask whether to stop the timer, then again every hour */
+const OT_KEY="worklog.otSnooze";let otSnooze=0;try{otSnooze=+localStorage.getItem(OT_KEY)||0}catch(e){}
+const otSet=v=>{otSnooze=v;try{localStorage.setItem(OT_KEY,String(v))}catch(e){}};
+// next prompt: when the day's time reaches the target, but never before the snooze ends; null when the timer is off
+function otInfo(){
+  if(!S.timer||S.profile.otNudge===false)return null;
+  const [y,m,d]=parseId(S.timer.id),secs=day(y,m,d).secs,lim=hrs()*3600;
+  return {secs,lim,due:Math.max(Date.now()+Math.max(0,lim-secs)*1000,otSnooze)}}
+// the daily target, always a plain number: profile data can arrive from a backup file or Drive sync
+const hrs=()=>{const h=+S.profile.hours;return h>0&&h<=24?h:8};
+function otSync(){
+  if(!APP||!APP.setOvertime)return;
+  try{const o=otInfo();APP.setOvertime(o?Math.round(o.due):0,o?Math.round(o.secs+(o.due-Date.now())/1000):0,o?Math.round(o.lim):0)}catch(e){}}
 function applyTheme(){const r=document.documentElement;r.classList.toggle("app-dark",S.theme==="dark");r.classList.toggle("app-light",S.theme==="light");applyAccent();try{APP&&APP.setDark(isDark())}catch(e){}}
 /* liquid toggle — gooey switch inspired by the 21st.dev "Liquid Toggle":
    a knob and two trailing drops melt together through an SVG goo filter as they slide */
@@ -1885,10 +1902,10 @@ function questCard(g){
     cells+=`<button class="sd s-${s} ${isT?"is-today":""} ${x.has&&prevHas?"chain":""}" data-strip="${x.id}" aria-label="${DOWFULL[i]} ${MSHORT[t.getMonth()]} ${t.getDate()}: ${s==="has"?"logged":s}">
       <span class="sd-dow">${DOW[i][0]}</span><span class="sd-dot">${s==="done"?BI.check:s==="missed"?"":""}</span></button>`;
     prevHas=x.has}
-  const td=day(TY,TM,TD),target=S.profile.hours*3600;
+  const td=day(TY,TM,TD),target=hrs()*3600;
   const goal=td.off&&!td.has?`Day off today — your streak is safe.`:
     td.status==="done"?`Today is completed. <b>+${dayXP(td)} XP</b> earned.`:
-    td.has?`Today: <b>${fmtH(td.secs)}</b> of ${S.profile.hours}h · mark it completed for <b>+20 XP</b>`:
+    td.has?`Today: <b>${fmtH(td.secs)}</b> of ${hrs()}h · mark it completed for <b>+20 XP</b>`:
     g.cur>0?`Log something today to keep your <b>${g.cur}-day</b> streak alive.`:`Log today to start a new streak.`;
   const gp=td.has&&td.status!=="done"?Math.min(1,td.secs/target):td.status==="done"?1:0;
   return `<section class="quest t-${f.t} em-${emblemId()}" id="quest" style="--f1:${f.f1};--f2:${f.f2};--f3:${f.f3};--ph:${ph()}">
@@ -1963,7 +1980,7 @@ function logView(){
       ${stat("Completed",s.done,"days completed","var(--done)",si(0))}
       ${stat("In progress",s.prog,"days underway","var(--progress)",si(1))}
       ${stat("Pending",s.pend,"work days open","var(--faint)",si(2))}
-      ${stat("Tracked",fmtH(s.secs),`of ${Math.round(s.work*S.profile.hours)}h target`,"var(--accent)",si(3))}
+      ${stat("Tracked",fmtH(s.secs),`of ${Math.round(s.work*hrs())}h target`,"var(--accent)",si(3))}
     </section>
     <section class="card">${trendChart(weekTrend(y,m))}</section>`:`
     <div id="list"></div>`}
@@ -2118,7 +2135,7 @@ function profileView(){
   <form class="card stack" id="pform" autocomplete="off">
     <span class="eyebrow">About you</span>
     <div class="grid2">${f("p-name","Full name",p.name)}${f("p-role","Role",p.role)}${f("p-email","Work email",p.email,"email")}${f("p-dept","Team",p.dept)}</div>
-    ${f("p-hours","Target hours per day",p.hours,"number",'min="1" max="16" step="0.5" inputmode="decimal"')}
+    ${f("p-hours","Target hours per day",hrs(),"number",'min="1" max="16" step="0.5" inputmode="decimal"')}
     <button class="btn primary full" type="submit">${ic.check}Save profile</button>
   </form>
   ${accountCard()}
@@ -2141,6 +2158,7 @@ function profileView(){
     <span class="eyebrow">Daily reminder</span>
     <div class="row between"><div><b>End-of-day nudge</b><div class="note">Reminds you at the time below, on the minute. It stays quiet on days off and once you've logged the day.</div></div>${liquidToggle("remToggle",p.reminder,"Daily reminder",false,"rem")}</div>
     <div class="field" style="max-width:200px"><label for="p-time">Remind me at</label><input id="p-time" type="time" value="${esc(p.time)}" ${p.reminder?"":"disabled"}></div>
+    <div class="row between"><div><b>Overtime nudge</b><div class="note">When the timer passes your ${hrs()}h target it asks if you want to stop, then asks again every hour.</div></div>${liquidToggle("otToggle",p.otNudge!==false,"Overtime nudge",false,"ot")}</div>
     <p class="note" style="margin:0">${APP?"You'll get a phone notification at this time on your working days.":"Notifications fire in the Android app; the web app only saves the setting."}</p>
   </section>
   <section class="card stack" id="bkCard">
@@ -2170,7 +2188,7 @@ function closeMenu(){if(menuEl){menuEl.remove();menuEl=null}for(const id of ["ye
 function openProfileCard(anchor){
   closeMenu();
   const p=S.profile,g=gameStats();
-  const rows=[["Email",p.email],["Team",p.dept],["Daily target",p.hours?p.hours+"h":""],["Level",`Lv ${g.lv.n} · ${g.lv.title}`],["Streak",`${g.cur} day${g.cur===1?"":"s"}`]];
+  const rows=[["Email",p.email],["Team",p.dept],["Daily target",hrs()+"h"],["Level",`Lv ${g.lv.n} · ${g.lv.title}`],["Streak",`${g.cur} day${g.cur===1?"":"s"}`]];
   const el=document.createElement("div");el.className="pcard";el.setAttribute("role","dialog");el.setAttribute("aria-label","Your profile");
   el.innerHTML=`<div class="pc-cover"></div><div class="pc-av">${avatarInner()}</div>
     <div class="pc-body"><div class="pc-name">${esc(p.name)||"Your profile"}</div><div class="note">${p.role?esc(p.role):"No role added yet"}</div>
@@ -2298,7 +2316,16 @@ function stopTimer(){if(!S.timer)return;const r=raw(S.timer.id);r.secs=(r.secs||
 function toggleTimer(id){
   const was=S.timer&&S.timer.id;const stopped=stopTimer();
   if(was!==id){S.timer={id,start:Date.now()};const r=raw(id),[y,m,d]=parseId(id);if(day(y,m,d).status!=="done")r.status="progress";delete r.auto}
-  save();if(stopped&&stopped!==id)refreshCard(stopped);refreshCard(id);refreshQuestSoon();refreshHeader();
+  otSet(0);save();if(stopped&&stopped!==id)refreshCard(stopped);refreshCard(id);refreshQuestSoon();refreshHeader();
+}
+function otStop(){if(S.timer){toggleTimer(S.timer.id);toast("Timer stopped")}}
+function otAsk(){
+  const o=otInfo();if(!o)return;
+  otSet(Date.now()+36e5);otSync();
+  sheet(`<div class="stack"><h2>Still going?</h2>
+    <p class="note" style="margin:0;font-size:13.5px">You've worked <b>${fmtDur(o.secs)}</b> today, past your ${fmtDur(o.lim)} target. Stop the timer, or keep working and I'll ask again in an hour.</p>
+    <div class="grid2"><button class="btn ghost" data-close>Keep working</button><button class="btn primary" id="ot-stop">${ic.pause}Stop timer</button></div></div>`,
+    (el,close)=>el.querySelector("#ot-stop").onclick=()=>{close();otStop()});
 }
 // time worked without the timer: counts toward the day's hours, earns no XP
 function manualSheet(id){
@@ -2502,6 +2529,7 @@ app.addEventListener("click",e=>{
     clearlogs:()=>deleteLogsSheet(),
     jump:()=>{const d=document.getElementById("d-"+TODAY);d&&d.scrollIntoView({behavior:"smooth",block:"start"})},
     rem:()=>{S.profile.reminder=!S.profile.reminder;save();setToggle(el,S.profile.reminder);$("#p-time").disabled=!S.profile.reminder;syncReminder()},
+    ot:()=>{S.profile.otNudge=S.profile.otNudge===false;save();setToggle(el,S.profile.otNudge!==false)},
     upd:()=>checkUpdate(true),
     csv:()=>exportSheet("Spreadsheet export",csv()),
     json:()=>exportSheet("Full backup",JSON.stringify({...S,timer:null},null,1)),
@@ -2511,7 +2539,7 @@ app.addEventListener("click",e=>{
     bkpick:()=>pickBkFile(),
     gsignin:async()=>{el.disabled=true;const ok=await signIn();el.disabled=false;if(ok&&U.tab==="profile")redraw()},
     gsignout:()=>signOut(),
-    syncnow:()=>{if(needTap){needTap=false;getToken(false).then(()=>syncNow(),()=>syncNow())}else syncNow()},
+    syncnow:()=>{if(APP&&syncSt.auth){getToken(true).then(()=>syncNow(),e=>{if(!/cancel|superseded/.test(e&&e.message||""))toast(`Couldn't sign in with Google (${esc((e&&e.message||"").slice(0,90))})`)});return}if(needTap){needTap=false;getToken(false).then(()=>syncNow(),()=>syncNow())}else syncNow()},
     bkresume:()=>resumeBkFile(),
     bkdl:()=>{if(!hasData(S)){toast("Nothing to back up yet");return}downloadBackup();toast("Backup downloaded")}
   })[el.dataset.act]?.();
@@ -2519,7 +2547,8 @@ app.addEventListener("click",e=>{
 app.addEventListener("keydown",e=>{const el=e.target.closest("[data-mmenu],label[for]");if(el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();el.click()}});
 
 /* live timer ticking without re-rendering */
-setInterval(()=>{if(!S.timer)return;const [y,m,d]=parseId(S.timer.id),x=day(y,m,d);
+setInterval(()=>{if(!S.timer)return;
+  const o=otInfo();if(o&&o.due<=Date.now()+500&&!document.hidden&&!document.querySelector(".scrim"))otAsk();const [y,m,d]=parseId(S.timer.id),x=day(y,m,d);
   document.querySelectorAll(`[data-timer="${S.timer.id}"] span`).forEach(el=>el.textContent=fmtTimer(x.tsecs));
   document.querySelectorAll(`[data-tick="${S.timer.id}"]`).forEach(el=>el.textContent=fmtTimer(x.secs))},1000);
 
@@ -2530,6 +2559,10 @@ applyScene();
 Promise.race([document.fonts?document.fonts.ready:0,new Promise(r=>setTimeout(r,350))]).then(()=>{
   document.documentElement.classList.remove("boot");if(app.classList.contains("enter")){app.classList.remove("enter");void app.offsetWidth;app.classList.add("enter")}});
 syncReminder();
+// the notification's "Stop timer" button opens the app and leaves a flag for the page to pick up
+window.__ot=()=>{try{if(APP&&APP.takeStop&&APP.takeStop())otStop()}catch(e){}};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){otSync();window.__ot()}});
+otSync();window.__ot();
 loadBkFile();
 // sync when the app comes back to the front, and every minute while it's open (a quick version check)
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&acct)syncNow()});
