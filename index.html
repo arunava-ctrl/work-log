@@ -2607,8 +2607,16 @@ async function checkUpdate(manual){
     ${notes.length?`<ul class="note" style="margin:0;padding-left:18px">${notes.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>`:""}
     <button class="btn primary full" data-upd-go>${ic.down}Download update</button>
     <button class="btn ghost full" data-close data-upd-later>Later</button>
-    <p class="note" style="margin:0">The file downloads in your browser — open it and tap <b>Update</b>.</p></div>`,(el,close)=>{
-    el.querySelector("[data-upd-go]").onclick=()=>{close();APP.openUrl?APP.openUrl(url):location.href=url};
+    <div data-upd-bar hidden style="height:6px;border-radius:3px;background:var(--border);overflow:hidden"><i style="display:block;height:100%;width:0;background:var(--accent);transition:width .2s"></i></div>
+    <p class="note" data-upd-note style="margin:0">${APP.installUpdate?"Downloads here in the app, then Android asks you to confirm the update.":"The file downloads in your browser — open it and tap <b>Update</b>."}</p></div>`,(el,close)=>{
+    const go=el.querySelector("[data-upd-go]"),bar=el.querySelector("[data-upd-bar]"),fill=bar.firstElementChild,note=el.querySelector("[data-upd-note]"),label=go.innerHTML;
+    go.onclick=()=>{
+      if(!APP.installUpdate){close();APP.openUrl?APP.openUrl(url):location.href=url;return}
+      go.disabled=true;bar.hidden=false;go.textContent="Downloading… 0%";
+      window.__updProg=p=>{if(p>100){go.textContent="Installing…";note.textContent="Confirm in the Android window. When it finishes, open Work Log again.";return}
+        fill.style.width=p+"%";go.textContent=`Downloading… ${p}%`};
+      window.__updFail=m=>{go.disabled=false;go.innerHTML=label;bar.hidden=true;if(m)note.textContent="Update failed: "+m};
+      APP.installUpdate(url)};
     el.querySelector("[data-upd-later]").onclick=()=>{try{localStorage.setItem("worklog.updSkip",v)}catch(e){}};
   });
 }
