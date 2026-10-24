@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Work Log Privacy</title>
-<link rel="icon" type="image/png" href="icons/icon-192.png">
 <style>
 :root{--bg:#FAFAFA;--text:#18181B;--muted:#52525B;--line:#E4E4E7;--accent:#5B5BF6}
 @media (prefers-color-scheme:dark){:root{--bg:#09090B;--text:#FAFAFA;--muted:#A1A1AA;--line:#27272A;--accent:#8583FF}}
@@ -21,18 +20,20 @@ a{color:var(--accent)}
 <body>
 <main>
 <h1>Privacy</h1>
-<div class="date">Work Log · last updated 2 October 2026</div>
-<p>Work Log is a personal work diary. It has no server of its own and no analytics, ads or tracking.</p>
+<div class="date">Work Log · last updated 24 October 2026</div>
+<p>Work Log is a personal work diary. It has no server of its own, and no ads, analytics or tracking.</p>
 <h2>What's stored, and where</h2>
 <ul>
-<li><b>On your device:</b> everything you enter (days, tasks, notes, times, pictures, tags and settings) is saved in the app or in your browser.</li>
-<li><b>Automatic backup:</b> the Android app saves a backup file in your phone's Documents/WorkLog folder and, through Android's own backup, in your Google account. In a browser, a backup is saved only to a file you choose.</li>
-<li><b>If you sign in with Google:</b> your log is saved as one file in the hidden app folder of <i>your own</i> Google Drive, so your devices can sync. Work Log asks only for that app folder (<code>drive.appdata</code>) and your name, email address and profile picture, which are shown on your Profile. It can't see or change any other files in your Drive.</li>
+<li><b>On your device:</b> everything you enter (days, laps, tasks, notes, times, pictures, projects and settings) is saved inside the app.</li>
+<li><b>Backups:</b> on Android, automatic backup saves a file in Documents/WorkLog, and Android's own backup can keep a copy in your Google account. On iPhone, a backup is only made when you save one to Files.</li>
+<li><b>Google sign-in (Android, optional):</b> your log is saved as one file in the hidden app folder of <i>your own</i> Google Drive, so your devices can sync. Work Log asks only for that folder (<code>drive.appdata</code>) and your name, email address and profile picture, which show on Me. It can't see or change any other files in your Drive.</li>
+<li><b>Update check (Android):</b> once a day the app asks GitHub for the newest version number. No log data is sent; GitHub sees the visit like any website does.</li>
+<li><b>Reminders, the live timer and widgets</b> are made on your device and send nothing anywhere.</li>
 </ul>
 <h2>Who can see it</h2>
-<p>Only you. Your data goes directly between your device and Google's servers. The developer never receives it, and nothing is sold or shared.</p>
+<p>Only you. Data goes straight between your device and Google. The developer never receives it, and nothing is sold or shared.</p>
 <h2>Deleting your data</h2>
-<p>Use <b>Profile → Erase all data</b> in the app. To remove the synced copy, open Google Drive on the web, go to Settings → Manage apps, find Work Log, and choose "Delete hidden app data". You can remove Work Log's access to your account at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</p>
+<p>Use <b>Me → Erase all data</b> in the app. To remove the synced copy, open Google Drive on the web, go to Settings → Manage apps, find Work Log, and choose "Delete hidden app data". You can remove Work Log's access to your account at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</p>
 <h2>Contact</h2>
 <p>Questions? Open an issue at <a href="https://github.com/arunava-ctrl/work-log/issues">github.com/arunava-ctrl/work-log</a>.</p>
 </main>
